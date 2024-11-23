@@ -1,0 +1,58 @@
+kg_arcaneward: Arcane Ward
+kg_arcaneward_description: A magical ward that protects and notifies you of intruders.
+kg_arcaneward_activated: Activated
+kg_arcaneward_activate: Activate
+kg_arcaneward_deactivated: Deactivated
+kg_arcaneward_deactivate: Deactivate
+kg_arcaneward_nofuel: No Fuel
+kg_arcaneward_openui: Open UI
+kg_arcaneward_owner: Owner
+kg_arcaneward_enabled: Enabled
+kg_arcaneward_enabled_tooltip: If enabled, the Arcane Ward will be active and consume fuel.
+kg_arcaneward_disabled: Disabled
+kg_arcaneward_bubble: Bubble
+kg_arcaneward_bubble_tooltip: If enabled, the Arcane Ward will have a bubble around it.
+kg_arcaneward_notifyonflash: Notify on Flash
+kg_arcaneward_notifyonflash_tooltip: If enabled, the owner and permitted players will be notified when the Arcane Ward flashes.
+kg_arcaneward_notifyonflash_message: has flashed!
+kg_arcaneward_radius: Radius
+kg_arcaneward_radius_tooltip: The radius of the Arcane Ward.
+kg_arcaneward_bubblerefraction: Bubble Refraction
+kg_arcaneward_bubblerefraction_tooltip: The refraction of the bubble (Visuals only)
+kg_arcaneward_fuel: Fuel
+kg_arcaneward_fuel_tooltip: The fuel of the Arcane Ward.
+kg_arcaneward_add: Add
+kg_arcaneward_protection_armor_stand: Armor Stand
+kg_arcaneward_protection_beehive: Beehive
+kg_arcaneward_protection_container: Container
+kg_arcaneward_protection_door: Door
+kg_arcaneward_protection_fermenter: Fermenter
+kg_arcaneward_protection_incinerator: Incinerator
+kg_arcaneward_protection_item_stand: Item Stand
+kg_arcaneward_protection_map_table: Map Table
+kg_arcaneward_protection_build_piece: Build Piece
+kg_arcaneward_protection_destroy_piece: Destroy Piece
+kg_arcaneward_protection_sap_collector: Sap Collector
+kg_arcaneward_protection_sign: Sign
+kg_arcaneward_protection_portal: Portal
+kg_arcaneward_protection_trap: Trap
+kg_arcaneward_protection_pickup_item: Pickup Item
+kg_arcaneward_protection_drop_item: Drop Item
+kg_arcaneward_protection_ship: Ship
+kg_arcaneward_protection_push_players: Push Players
+kg_arcaneward_protection_no_build_damage: No Build Damage
+kg_arcaneward_protection_pickables: Pickables
+kg_arcaneward_protection_crafting_stations: Crafting Stations
+kg_cantviewarcaneward: You can't view this Arcane Ward.
+kg_arcaneward_overview: Overview
+kg_arcaneward_protection: Protection
+kg_arcaneward_permissions: Permissions
+kg_arcaneward_save: Save
+kg_arcaneward_permitted: Permitted
+kg_arcaneward_players: Players
+kg_arcaneward_charge: Charge
+kg_arcaneward_seconds: s
+kg_arcaneward_minutes: m
+kg_arcaneward_hours: h
+kg_arcaneward_days: d
+kg_arcanewardlimit: Arcane Ward limit reached.

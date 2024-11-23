@@ -1,0 +1,58 @@
+kg_arcaneward: 신비한 와드
+kg_arcaneward_description: 침입자로부터 당신을 보호하고 알려주는 마법의 와드입니다.
+kg_arcaneward_activated: 활성화됨
+kg_arcaneward_activate: 활성화
+kg_arcaneward_deactivated: 비활성화됨
+kg_arcaneward_deactivate: 비활성화
+kg_arcaneward_nofuel: 연료 없음
+kg_arcaneward_openui: UI 열기
+kg_arcaneward_owner: 소유자
+kg_arcaneward_enabled: 활성화됨
+kg_arcaneward_enabled_tooltip: 활성화되면 신비한 와드가 작동하고 연료를 소비합니다.
+kg_arcaneward_disabled: 비활성화됨
+kg_arcaneward_bubble: 보호막
+kg_arcaneward_bubble_tooltip: 활성화되면 신비한 와드 주위에 보호막이 생깁니다.
+kg_arcaneward_notifyonflash: 깜박임 알림
+kg_arcaneward_notifyonflash_tooltip: 활성화되면 신비한 와드가 깜박일 때 소유자와 허가된 플레이어들에게 알림이 갑니다.
+kg_arcaneward_notifyonflash_message: 깜박였습니다!
+kg_arcaneward_radius: 반경
+kg_arcaneward_radius_tooltip: 신비한 와드막의 반경입니다.
+kg_arcaneward_bubblerefraction: 보호막 굴절룰
+kg_arcaneward_bubblerefraction_tooltip: 보호막의 굴절률입니다 (시각적 효과만)
+kg_arcaneward_fuel: 연료
+kg_arcaneward_fuel_tooltip: 신비한 와드의 연료입니다.
+kg_arcaneward_add: 추가
+kg_arcaneward_protection_armor_stand: 갑옷 거치대
+kg_arcaneward_protection_beehive: 벌집
+kg_arcaneward_protection_container: 컨테이너
+kg_arcaneward_protection_door: 문
+kg_arcaneward_protection_fermenter: 발효기
+kg_arcaneward_protection_incinerator: 소각로
+kg_arcaneward_protection_item_stand: 아이템 거치대
+kg_arcaneward_protection_map_table: 지도 테이블
+kg_arcaneward_protection_build_piece: 건축 조각
+kg_arcaneward_protection_destroy_piece: 파괴 조각
+kg_arcaneward_protection_sap_collector: 수액 수집기
+kg_arcaneward_protection_sign: 표지판
+kg_arcaneward_protection_portal: 포털
+kg_arcaneward_protection_trap: 함정
+kg_arcaneward_protection_pickup_item: 아이템 줍기
+kg_arcaneward_protection_drop_item: 아이템 버리기
+kg_arcaneward_protection_ship: 배
+kg_arcaneward_protection_push_players: 플레이어 밀기
+kg_arcaneward_protection_no_build_damage: 건축물 손상 없음
+kg_arcaneward_protection_pickables: 채집 가능한 것들
+kg_arcaneward_protection_crafting_stations: 제작 작업대
+kg_cantviewarcaneward: 이 신비한 와드를 볼 수 없습니다.
+kg_arcaneward_overview: 개요
+kg_arcaneward_protection: 보호
+kg_arcaneward_permissions: 권한
+kg_arcaneward_save: 저장
+kg_arcaneward_permitted: 허가됨
+kg_arcaneward_players: 플레이어
+kg_arcaneward_charge: 충전
+kg_arcaneward_seconds: 초
+kg_arcaneward_minutes: 분
+kg_arcaneward_hours: 시간
+kg_arcaneward_days: 일
+kg_arcanewardlimit: 신비한 와드 한도에 도달했습니다.
