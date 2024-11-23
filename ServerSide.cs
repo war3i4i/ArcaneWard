@@ -103,7 +103,6 @@ public static class ServerSide
             if (zdo == null) return;
             if (zdo.m_prefab != Ward) return;
             string id = zdo.GetString(ArcaneWard_ID);
-            MonoBehaviour.print($"Restoring ward data for: {id}");
             if (!_wardManager.PlayersWardData.ContainsKey(id)) return;
             _wardManager.PlayersWardData[id]--;
             if (_wardManager.PlayersWardData[id] < 0) _wardManager.PlayersWardData[id] = 0;
@@ -122,7 +121,6 @@ public static class ServerSide
             ZNetPeer peer = ZNet.instance.GetPeer(rpc);
             string id = peer.m_socket.GetHostName();
             ZRoutedRpc.instance.InvokeRoutedRPC(peer.m_uid, "ArcaneWard Data", _wardManager.CanBuildWard(id));
-            MonoBehaviour.print($"Sent can build ward data to: {id}");
         }
     }
 
@@ -139,7 +137,7 @@ public static class ServerSide
             }
         }
 
-        public static void WardPlaced(long sender)
+        private static void WardPlaced(long sender)
         {
             ZNetPeer peer = ZNet.instance.GetPeer(sender);
             if (peer == null) return;
@@ -168,17 +166,8 @@ public static class ServerSide
         {
             TempWardsList.Clear();
             int index = 0;
-            while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(toSearch, TempWardsList, ref index))
-            {
-                yield return null;
-            }
-
-            foreach (ZDO zdo in TempWardsList)
-            {
-                ZDOMan.instance.ForceSendZDO(zdo.m_uid);
-            }
-            MonoBehaviour.print($"Sent ward data to all clients");
-
+            while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(toSearch, TempWardsList, ref index)) { yield return null; }
+            foreach (ZDO zdo in TempWardsList) ZDOMan.instance.ForceSendZDO(zdo.m_uid);
             yield return new WaitForSeconds(10f);
         }
     }

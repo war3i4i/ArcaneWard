@@ -83,19 +83,6 @@ public static class Extensions
         return z.GetString("Name", "$kg_arcaneward");  
     }
     
-    private static void SetPermittedPlayers(this ArcaneWardComponent ward, Dictionary<long, string> users)
-    {
-        ward._znet.m_zdo.Set("permitted", users.Count);
-        int c = 0;
-        foreach (var user in users)
-        {
-            ward._znet.m_zdo.Set("pu_id" + c, user.Key);
-            ward._znet.m_zdo.Set("pu_name" + c, user.Value);
-            ++c;
-        }
-        ward._znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(users)]);
-    }
-    
     public static void SetPermittedPlayers(this ZDO ward, Dictionary<long, string> users)
     {
         ward.Set("permitted", users.Count);
@@ -131,7 +118,8 @@ public static class Extensions
         var permittedPlayers = ward.GetPermittedPlayers();
         if (permittedPlayers.ContainsKey(playerID) || playerID == 0) return;
         permittedPlayers[playerID] = playerName;
-        ward.SetPermittedPlayers(permittedPlayers);
+        ward._znet.m_zdo.SetPermittedPlayers(permittedPlayers);
+        ward._znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(permittedPlayers)]);
     }
 
     public static Minimap.PinData GetCustomPin(Minimap.PinType type, Vector3 pos, float radius)
@@ -159,7 +147,8 @@ public static class Extensions
         var permittedPlayers = ward.GetPermittedPlayers();
         if (!permittedPlayers.ContainsKey(playerID)) return;
         permittedPlayers.Remove(playerID);
-        ward.SetPermittedPlayers(permittedPlayers);
+        ward._znet.m_zdo.SetPermittedPlayers(permittedPlayers);
+        ward._znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(permittedPlayers)]);
     }
     
     public static bool HasFlagFast(this Protection protection, Protection flag)
