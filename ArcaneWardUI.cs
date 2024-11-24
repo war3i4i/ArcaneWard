@@ -165,9 +165,10 @@ public static class ArcaneWardUI
                 Transform entry = ProtectionEntry.transform.parent.GetChild(i);
                 long value = long.Parse(entry.gameObject.name);
                 val |= (Protection)value;
-            }
+            } 
             _currentWard.Set(ArcaneWardComponent._cache_Key_Protection, (long)val);
             _currentWard.SetPermittedPlayers(_tempPermittedList);
+            _currentWard.Set(ArcaneWardComponent._cache_Key_LastUpdateTime, (int)EnvMan.instance.m_totalSeconds);
         }
     }
     public static void Hide()
@@ -312,9 +313,6 @@ public static class ArcaneWardUI
         BubbleFraction.maxValue = 20;
         BubbleFraction.value = ward.GetInt(ArcaneWardComponent._cache_Key_BubbleFraction, 1); 
         BubbleFractionText.text = BubbleFraction.value.ToString(CultureInfo.InvariantCulture);
-        float fuel = _currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel);
-        Fuel.text = $"$kg_arcaneward_fuel: <color={(fuel > 0 ? "green" : "red")}>{((int)fuel).ToTime()}</color> / <color=yellow>{ArcaneWard.WardMaxFuel.Value.ToTimeNoS()}</color>".Localize();
-        if (_fuelTextCoroutine != null) ArcaneWard._thistype.StopCoroutine(_fuelTextCoroutine);
         _fuelTextCoroutine = ArcaneWard._thistype.StartCoroutine(UpdateFuelText());
         UpdateFuel();
         UpdateProtection();
@@ -333,10 +331,37 @@ public static class ArcaneWardUI
     {
         while (true)
         {
-            yield return new WaitForSeconds(1f);
             if (_currentWard == null || !_currentWard.IsValid()) continue;
-            float fuel = _currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel);
-            Fuel.text = $"$kg_arcaneward_fuel: <color={(fuel > 0 ? "green" : "red")}>{((int)fuel).ToTime()}</color> / <color=yellow>{ArcaneWard.WardMaxFuel.Value.ToTimeNoS()}</color>".Localize();
+            if (_currentWard.HasOwner()) 
+            {
+                float fuel = _currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel);
+                Fuel.text = $"$kg_arcaneward_fuel: <color={(fuel > 0 ? "green" : "red")}>{((int)fuel).ToTime()}</color> / <color=yellow>{ArcaneWard.WardMaxFuel.Value.ToTimeNoS()}</color>".Localize();
+            }
+            else
+            { 
+                if (_currentWard.GetBool(ArcaneWardComponent._cache_Key_Enabled))
+                {
+                    int currentTime = (int)EnvMan.instance.m_totalSeconds; 
+                    int deltaTime = currentTime - _currentWard.GetInt(ArcaneWardComponent._cache_Key_LastUpdateTime);
+                    float fuel = Mathf.Clamp(_currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel) - deltaTime, 0f, ArcaneWard.WardMaxFuel.Value);
+                    _currentWard.Set(ArcaneWardComponent._cache_Key_Fuel, fuel);
+                    _currentWard.Set(ArcaneWardComponent._cache_Key_LastUpdateTime, currentTime);
+                    if (fuel <= 0)
+                    { 
+                        _currentWard.Set(ArcaneWardComponent._cache_Key_Enabled, false);
+                        Enabled.transform.Find("text").GetComponent<TMP_Text>().text = DisabledLocalized;
+                        Enabled.transform.Find("text").GetComponent<TMP_Text>().color = Color.red;
+                        Enabled.gameObject.name = "-";
+                    }
+                    Fuel.text = $"$kg_arcaneward_fuel: <color={(fuel > 0 ? "green" : "red")}>{((int)fuel).ToTime()}</color> / <color=yellow>{ArcaneWard.WardMaxFuel.Value.ToTimeNoS()}</color>".Localize();
+                }
+                else
+                {
+                    float fuel = _currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel);
+                    Fuel.text = $"$kg_arcaneward_fuel: <color={(fuel > 0 ? "green" : "red")}>{((int)fuel).ToTime()}</color> / <color=yellow>{ArcaneWard.WardMaxFuel.Value.ToTimeNoS()}</color>".Localize();
+                }
+            }
+            yield return new WaitForSeconds(1f);
             if (!IsVisible) yield break;
         }
     }

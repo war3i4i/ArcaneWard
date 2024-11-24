@@ -166,7 +166,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
                     ? PrivilegeManager.GetNetworkUserId().Split('_')[1] 
                     : PrivilegeManager.GetNetworkUserId()); 
         }
-        InvokeRepeating(nameof(UpdateStatus), 1, 1);
+        InvokeRepeating(nameof(UpdateStatus), 1f, 1);
     }
 
     private void UpdateData(long sender, ZPackage pkg)
@@ -212,6 +212,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         if (currentState == !prevState) return;
         IsActivated = !prevState;
         Instantiate(prevState ? ArcaneWard.FlashShield_Deactivate : ArcaneWard.FlashShield_Activate, transform.position, Quaternion.identity);
+        LastUpdateTime = (int)EnvMan.instance.m_totalSeconds;
     }
     private void ResetCache(long obj, string permittedJSON)
     {
@@ -237,7 +238,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         if (!_znet.IsValid() || !Player.m_localPlayer) return "";
         if (!IsPermitted(Game.instance.m_playerProfile.m_playerID) && !Player.m_debugMode)
         { 
-            return "$kg_cantviewarcaneward".Localize(); 
+            return "$kg_cantviewarcaneward".Localize();  
         }
 
         StringBuilder stringBuilder = new StringBuilder(256); 
@@ -251,7 +252,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         stringBuilder.Append(IsActivated ? "\n [<color=yellow><b>$KEY_Use</b></color>] $kg_arcaneward_deactivate" : "\n [<color=yellow><b>$KEY_Use</b></color>] $kg_arcaneward_activate");
         stringBuilder.Append("\n [<color=yellow><b>L.Shift + $KEY_Use</b></color>] $kg_arcaneward_openui");
         return Localization.instance.Localize(stringBuilder.ToString());
-    }
+    }  
     
     private int LastFlashTime;
     public void Flash() 

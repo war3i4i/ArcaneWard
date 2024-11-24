@@ -3,6 +3,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 using Valheim.SettingsGui;
 
@@ -16,6 +17,7 @@ namespace kg_ArcaneWard;
         [UsedImplicitly]
         private static void Postfix(FejdStartup __instance)
         {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return; 
             if (!firstInit) return;
             firstInit = false;
             GameObject settingsPrefab = __instance.m_settingsPrefab;
