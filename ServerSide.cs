@@ -63,7 +63,7 @@ public static class ServerSide
 
     public static void ServerSideInit()
     {
-        string folder = Path.Combine(Paths.ConfigPath, "ArcaneWard");
+        string folder = Path.Combine(Paths.ConfigPath, "ArcaneWard"); 
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
         _wardManager = new WardManager(Path.Combine(folder, "WardData.json"));
         VIPplayersList = new SyncedList(Path.Combine(folder, "VIPplayers.txt"), "");

@@ -88,22 +88,22 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     private bool IsEnabled => IsActivated && Fuel > 0;
     public bool IsActivated
     { 
-        get => _znet.IsValid() && _znet.m_zdo.GetBool(_cache_Key_Enabled);
+        get => _znet.m_zdo.GetBool(_cache_Key_Enabled);
         set => _znet.m_zdo.Set(_cache_Key_Enabled, value);
     }
     public bool IsBubbleEnabled
     {
-        get => _znet.IsValid() && _znet.m_zdo.GetBool(_cache_Key_Bubble, true);
+        get => _znet.m_zdo.GetBool(_cache_Key_Bubble, true);
         set => _znet.m_zdo.Set(_cache_Key_Bubble, value);
     }
     public int BubbleFraction
     {
-        get => _znet.IsValid() ? _znet.m_zdo.GetInt(_cache_Key_BubbleFraction, 1) : 1;
+        get => _znet.m_zdo.GetInt(_cache_Key_BubbleFraction, 1);
         set => _znet.m_zdo.Set(_cache_Key_BubbleFraction, value);
     }
     public bool IsNotifyEnabled
     {
-        get => _znet.IsValid() && _znet.m_zdo.GetBool(_cache_Key_Notify);
+        get => _znet.m_zdo.GetBool(_cache_Key_Notify);
         set => _znet.m_zdo.Set(_cache_Key_Notify, value);
     }
     private float Fuel
