@@ -32,20 +32,7 @@ public static class Extensions
         return result.Localize().Trim();
     }
     
-    public static Dictionary<long, string> GetPermittedPlayers(this ArcaneWardComponent ward)
-    {
-        Dictionary<long, string> dic = new();
-        int @int = ward._znet.m_zdo.GetInt("permitted");
-        for (int i = 0; i < @int; i++)
-        {
-            long @long = ward._znet.m_zdo.GetLong("pu_id" + i);
-            string @string = ward._znet.m_zdo.GetString("pu_name" + i);
-            if (@long != 0L) dic[@long] = @string;
-        }
-        return dic;
-    }
-
-    public static HashSet<long> GetPermittedPlayers(this ZDO z)
+    public static HashSet<long> GetPermittedPlayersHashset(this ZDO z)
     {
         HashSet<long> set = [];
         int @int = z.GetInt("permitted");
@@ -57,7 +44,7 @@ public static class Extensions
         return set;
     }
     
-    public static Dictionary<long, string> GetPermittedPlayersDic(this ZDO z)
+    public static Dictionary<long, string> GetPermittedPlayers(this ZDO z)
     {
         Dictionary<long, string> dic = new();
         int @int = z.GetInt("permitted");
@@ -89,7 +76,7 @@ public static class Extensions
         int c = 0;
         foreach (var user in users)
         {
-            ward.Set("pu_id" + c, user.Key);
+            ward.Set("pu_id" + c, user.Key); 
             ward.Set("pu_name" + c, user.Value);
             ++c;
         }
@@ -112,15 +99,6 @@ public static class Extensions
 
         return defaultSprite;
     }
-    
-    public static void AddPermitted(this ArcaneWardComponent ward, long playerID, string playerName)
-    {
-        var permittedPlayers = ward.GetPermittedPlayers();
-        if (permittedPlayers.ContainsKey(playerID) || playerID == 0) return;
-        permittedPlayers[playerID] = playerName;
-        ward._znet.m_zdo.SetPermittedPlayers(permittedPlayers);
-        ward._znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(permittedPlayers)]);
-    }
 
     public static Minimap.PinData GetCustomPin(Minimap.PinType type, Vector3 pos, float radius)
     {
@@ -142,20 +120,10 @@ public static class Extensions
  
     public static string Localize(this string key) => Localization.instance.Localize(key);
     
-    public static void RemovePermitted(this ArcaneWardComponent ward, long playerID)
-    {
-        var permittedPlayers = ward.GetPermittedPlayers();
-        if (!permittedPlayers.ContainsKey(playerID)) return;
-        permittedPlayers.Remove(playerID);
-        ward._znet.m_zdo.SetPermittedPlayers(permittedPlayers);
-        ward._znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(permittedPlayers)]);
-    }
-    
     public static bool HasFlagFast(this Protection protection, Protection flag)
     {
         return (protection & flag) != 0;
     } 
-    
     
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.Start))]
     private static class SetMaxPins

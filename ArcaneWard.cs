@@ -21,7 +21,8 @@ namespace kg_ArcaneWard
         private const string NAME = "Arcane Ward";
         private const string VERSION = "0.1.0";
         
-        private static readonly ConfigSync configSync = new ConfigSync(GUID) { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
+        private static readonly ConfigSync configSync = new ConfigSync(GUID) 
+            { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
 
         public static ArcaneWard _thistype;
         public static ConfigEntry<string> WardRecipe;
@@ -32,6 +33,11 @@ namespace kg_ArcaneWard
         public static ConfigEntry<string> WardFuelPrefabs;
         public static ConfigEntry<int> WardMaxFuel;
         public static ConfigEntry<Protection> DisabledProtection;
+
+        public static ConfigEntry<bool> CastShadows;
+        public static ConfigEntry<bool> WardSound;
+        public static ConfigEntry<bool> WardFlash;
+            
         public static GameObject FlashShield;
         public static GameObject FlashShield_Permit;
         public static GameObject FlashShield_Fuel;
@@ -64,7 +70,7 @@ namespace kg_ArcaneWard
             ArcaneWard_Icon = ArcaneWard_Piece.GetComponent<Piece>().m_icon;
             
             WardRecipe = config("General", "WardRecipe", "Iron:10:true,Wood:5:true", "The recipe for the Arcane Ward");
-            WardRecipe.SettingChanged += (sender, args) => ZNetScene_Awake_Patch.ResetRecipe();
+            WardRecipe.SettingChanged += (_, _) => ZNetScene_Awake_Patch.ResetRecipe();
             WardDefaultRadius = config("General", "WardDefaultRadius", 30, "The default radius of the Arcane Ward");
             WardMinRadius = config("General", "WardMinRadius", 10, "The minimum radius of the Arcane Ward");
             WardMaxRadius = config("General", "WardMaxRadius", 100, "The maximum radius of the Arcane Ward");
@@ -73,9 +79,20 @@ namespace kg_ArcaneWard
             WardMaxFuel = config("General", "WardMaxFuel", 604800, "The maximum amount of fuel the Arcane Ward can hold");
             DisabledProtection = config("General", "DisabledProtection", Protection.None, "List of disabled Protection flags");
             
+            CastShadows = Config.Bind("Visuals", "CastShadows", true, "Whether the Arcane Ward Bubble should cast shadows");
+            WardSound = Config.Bind("Visuals", "WardSound", true, "Whether the Arcane Ward should play a sound when activated");
+            WardFlash = Config.Bind("Visuals", "WardFlash", true, "Whether the Arcane Ward should flash triggered");
+            ApplyOptions(CastShadows.Value, WardSound.Value);
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null) ArcaneWardUI.Init(); 
             ServerSide.ServerSideInit();
             new Harmony(GUID).PatchAll();
+        }
+        public static void ApplyOptions(bool castShadows, bool wardSound)
+        {
+            ArcaneWard_Piece.transform.Find("Bubble").GetComponent<MeshRenderer>().shadowCastingMode = castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+            ArcaneWardComponent._instances.ForEach(x => x._piece.transform.Find("Bubble").GetComponent<MeshRenderer>().shadowCastingMode = castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off);
+            ArcaneWard_Piece.transform.Find("VFX/sfx").gameObject.SetActive(wardSound);
+            ArcaneWardComponent._instances.ForEach(x => x._piece.transform.Find("VFX/sfx").gameObject.SetActive(wardSound));
         }
         private void Update()
         {

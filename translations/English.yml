@@ -56,3 +56,6 @@ kg_arcaneward_minutes: m
 kg_arcaneward_hours: h
 kg_arcaneward_days: d
 kg_arcanewardlimit: Arcane Ward limit reached.
+kg_arcaneward_castshadows: Ward Cast Shadows
+kg_arcaneward_enablewardsound: Enable Ward Sound
+kg_arcaneward_flashenabled: Enable Ward Flash

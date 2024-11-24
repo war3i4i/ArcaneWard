@@ -56,3 +56,6 @@ kg_arcaneward_minutes: м
 kg_arcaneward_hours: ч
 kg_arcaneward_days: д
 kg_arcanewardlimit: Достигнут лимит Вардов Арканы.
+kg_arcaneward_castshadows: Вард отбрасывает тень
+kg_arcaneward_enablewardsound: Включить звук Варда
+kg_arcaneward_flashenabled: Включить вспышку Варда

@@ -40,11 +40,11 @@ public static class ArcaneWardUI
     
     private static Dictionary<Protection, Sprite> ProtectionIcons;
 
-    
+    public static AssetBundle Asset;
     public static void Init()
     {
-        AssetBundle asset = ArcaneWard.GetAssetBundle("kg_arcanewardui");
-        UI = Object.Instantiate(asset.LoadAsset<GameObject>("ArcaneWardUI"));
+        Asset = ArcaneWard.GetAssetBundle("kg_arcanewardui");
+        UI = Object.Instantiate(Asset.LoadAsset<GameObject>("ArcaneWardUI"));
         Object.DontDestroyOnLoad(UI);
         UI.SetActive(false);
         //main
@@ -318,7 +318,7 @@ public static class ArcaneWardUI
         _fuelTextCoroutine = ArcaneWard._thistype.StartCoroutine(UpdateFuelText());
         UpdateFuel();
         UpdateProtection();
-        _tempPermittedList = _currentWard.GetPermittedPlayersDic();
+        _tempPermittedList = _currentWard.GetPermittedPlayers();
         UpdatePermittedList();
         UpdateAddPermittedList();
         UI.SetActive(true);  

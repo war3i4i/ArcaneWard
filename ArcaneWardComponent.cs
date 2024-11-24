@@ -152,7 +152,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         _effectArea = transform.Find("PlayerBase").GetComponent<EffectArea>();
         _effectArea.transform.localScale = new Vector3(Radius * 2, Radius * 2, Radius * 2);
         _wardMaterials = transform.GetChild(3).GetComponentsInChildren<MeshRenderer>(true).Select(x => x.material).ToList();
-        _cachedPermittedPlayers = this.GetPermittedPlayers();
+        _cachedPermittedPlayers = _znet.m_zdo.GetPermittedPlayers();
         _areaMarker.gameObject.SetActive(false);
         _bubble.GetComponent<MeshRenderer>().material.SetFloat(RefractionIntensity, BubbleFraction * 0.005f);
         _znet.Register<string>("RPC_ResetCache", ResetCache);
@@ -226,7 +226,9 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         _canPlaceWard = false;
         _znet.m_zdo.Set(ZDOVars.s_creatorName, creatorName);
         _znet.m_zdo.Set("ArcaneWard_ID", id);
-        this.AddPermitted(Game.instance.m_playerProfile.m_playerID, creatorName + " <color=green>[$kg_arcaneward_owner]</color>");
+        Dictionary<long, string> owner = new() { { Game.instance.m_playerProfile.m_playerID, creatorName + " <color=green>[$kg_arcaneward_owner]</color>" } };
+        _znet.m_zdo.SetPermittedPlayers(owner);
+        _znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(owner)]);
         ZRoutedRpc.instance.InvokeRoutedRPC("ArcaneWard Placed", [null]);
     }
 
@@ -252,13 +254,13 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     }
     
     private int LastFlashTime;
-    public void Flash()
+    public void Flash() 
     {
         if (EnvMan.instance.m_totalSeconds - LastFlashTime <= 2f) return;
          
-        if (IsNotifyEnabled)
+        if (IsNotifyEnabled && !IsPermitted(Game.instance.m_playerProfile.m_playerID))
         {
-            int now = (int)EnvMan.instance.m_totalSeconds;
+            int now = (int)EnvMan.instance.m_totalSeconds; 
             if (now - LastNotifyTime >= 8)
             {
                 LastNotifyTime = now;
@@ -268,10 +270,11 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
                 {
                     ZRoutedRpc.instance.InvokeRoutedRPC(playerInfo.m_characterID.UserID, "ArcaneWard Notify", [wardName]);
                 }
-            }
+            } 
         }
         
         LastFlashTime = (int)EnvMan.instance.m_totalSeconds;
+        if (!ArcaneWard.WardFlash.Value) return;
         var go = Instantiate(ArcaneWard.FlashShield, transform.position, Quaternion.identity);
         float rad = Radius / 32f;
         go.transform.Find("Dome").localScale = new Vector3(rad, rad, rad);
@@ -466,7 +469,7 @@ public static class WardProtectionPatches
     [HarmonyPatch(typeof(WearNTear),nameof(WearNTear.Damage))]
     private static class WearNTear_Damage_Patch
     {
-        private static bool Prefix(WearNTear __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, true, Protection.No_Build_Damage);
+        private static bool Prefix(WearNTear __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, false, Protection.No_Build_Damage);
     }
     [HarmonyPatch(typeof(Pickable),nameof(Pickable.Interact))]
     private static class Pickable_Interact_Patch
