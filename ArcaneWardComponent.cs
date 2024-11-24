@@ -160,7 +160,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         _znet.Register<int>("RPC_AddFuel", AddFuel);
         _znet.Register<ZPackage>("RPC_UpdateData", UpdateData);
         if (_znet.IsOwner() && CreatorName == "")
-        { 
+        {  
             Setup(Game.instance.GetPlayerProfile().GetName(),
                 ZNet.m_onlineBackend == OnlineBackendType.Steamworks
                     ? PrivilegeManager.GetNetworkUserId().Split('_')[1] 
