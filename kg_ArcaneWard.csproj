@@ -126,10 +126,10 @@
       <EmbeddedResource Include="translations\English.yml" />
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Include="translations\Russian.yml" />
-    </ItemGroup>
-    <ItemGroup>
-      <EmbeddedResource Include="translations\Korean.yml" />
+      <Content Include="ThunderstorePackage\kg_ArcaneWard.dll" />
+      <Content Include="ThunderstorePackage\kg_ArcaneWard.dll.mdb" />
+      <Content Include="ThunderstorePackage\manifest.json" />
+      <Content Include="ThunderstorePackage\README.md" />
     </ItemGroup>
 
 

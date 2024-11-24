@@ -56,7 +56,7 @@ public static class ServerSide
     }
 
     private static SyncedList VIPplayersList;
-    public static WardManager _wardManager;
+    private static WardManager _wardManager;
     private static ConfigEntry<int> MaxAmountOfWards;
     private static ConfigEntry<int> MaxAmountOfWards_VIP;
     private static FileSystemWatcher fsw;
@@ -67,8 +67,8 @@ public static class ServerSide
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
         _wardManager = new WardManager(Path.Combine(folder, "WardData.json"));
         VIPplayersList = new SyncedList(Path.Combine(folder, "VIPplayers.txt"), "");
-        MaxAmountOfWards = ArcaneWard._thistype.Config.Bind("WardOne", "MaxAmountOfWards", 3, "Max amount of wards");
-        MaxAmountOfWards_VIP = ArcaneWard._thistype.Config.Bind("WardOne", "MaxAmountOfWards_VIP", 5, "Max amount of wards for VIP");
+        MaxAmountOfWards = ArcaneWard._thistype.Config.Bind("Limitations", "MaxAmountOfWards", 10, "Max amount of wards");
+        MaxAmountOfWards_VIP = ArcaneWard._thistype.Config.Bind("Limitations", "MaxAmountOfWards_VIP", 30, "Max amount of wards for VIP");
 
         fsw = new FileSystemWatcher(Paths.ConfigPath)
         {

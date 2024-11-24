@@ -45,7 +45,7 @@ namespace kg_ArcaneWard
         public static GameObject FlashShield_Deactivate;
         
         public static AssetBundle GetAssetBundle(string filename)
-        {
+        { 
             Assembly execAssembly = Assembly.GetExecutingAssembly();
             string resourceName = execAssembly.GetManifestResourceNames().Single(str => str.EndsWith(filename));
             using Stream stream = execAssembly.GetManifestResourceStream(resourceName)!;
@@ -66,6 +66,7 @@ namespace kg_ArcaneWard
             _thistype = this;
             Asset = GetAssetBundle("kg_arcaneward");
             ArcaneWard_Piece = Asset.LoadAsset<GameObject>("ArcaneWard");
+            ArcaneWard_Piece.GetComponent<ZNetView>().m_distant = true;
             ArcaneWard_Piece.AddComponent<ArcaneWardComponent>();
             ArcaneWard_Icon = ArcaneWard_Piece.GetComponent<Piece>().m_icon;
             
