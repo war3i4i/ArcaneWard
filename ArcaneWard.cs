@@ -19,9 +19,9 @@ namespace kg_ArcaneWard
     {
         private const string GUID = "kg.ArcaneWard"; 
         private const string NAME = "Arcane Ward";
-        private const string VERSION = "0.1.0";
+        private const string VERSION = "0.2.0";
         
-        private static readonly ConfigSync configSync = new ConfigSync(GUID) 
+        private static readonly ConfigSync configSync = new ConfigSync(GUID)
             { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
 
         public static ArcaneWard _thistype;
@@ -32,6 +32,7 @@ namespace kg_ArcaneWard
         public static ConfigEntry<int> WardMaxDistanceToFuel;
         public static ConfigEntry<string> WardFuelPrefabs;
         public static ConfigEntry<int> WardMaxFuel;
+        public static ConfigEntry<bool> WardBlockProjectiles;
         public static ConfigEntry<Protection> DisabledProtection;
 
         public static ConfigEntry<bool> CastShadows;
@@ -79,6 +80,7 @@ namespace kg_ArcaneWard
             WardFuelPrefabs = config("General", "WardFuelPrefabs", "Resin,1200,Wood,2400,Coal,3600,Coins,7200", "The prefabs that can be used as fuel for the Arcane Ward");
             WardMaxFuel = config("General", "WardMaxFuel", 604800, "The maximum amount of fuel the Arcane Ward can hold");
             DisabledProtection = config("General", "DisabledProtection", Protection.None, "List of disabled Protection flags");
+            WardBlockProjectiles = config("General", "WardBlockProjectiles", true, "Whether the Arcane Ward should block projectiles");
             
             CastShadows = Config.Bind("Visuals", "CastShadows", true, "Whether the Arcane Ward Bubble should cast shadows");
             WardSound = Config.Bind("Visuals", "WardSound", true, "Whether the Arcane Ward should play a sound when activated");

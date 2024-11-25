@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using fastJSON;
 using HarmonyLib;
@@ -79,13 +80,12 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public static readonly int _cache_Key_LastNotifyTime = "LastNotifyTime".GetStableHashCode();
     public static readonly int _cache_Key_Fuel = "Fuel".GetStableHashCode();
     public static readonly int _cache_Key_LastUpdateTime = "LastUpdateTime".GetStableHashCode();
-    
     public string Name
     {
         get => _znet.m_zdo.GetString(_cache_Key_Name, "$kg_arcaneward");
         set => _znet.m_zdo.Set(_cache_Key_Name, value);
     }
-    private bool IsEnabled => IsActivated && Fuel > 0;
+    public bool IsEnabled => IsActivated && Fuel > 0;
     public bool IsActivated
     { 
         get => _znet.m_zdo.GetBool(_cache_Key_Enabled);
@@ -116,7 +116,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         get => _znet.m_zdo.GetInt(_cache_Key_LastUpdateTime);
         set => _znet.m_zdo.Set(_cache_Key_LastUpdateTime, value);
     }
-    private int Radius
+    public int Radius
     {
         get => Mathf.Clamp(_znet.m_zdo.GetInt(_cache_Key_Radius, ArcaneWard.WardDefaultRadius.Value), ArcaneWard.WardMinRadius.Value, ArcaneWard.WardMaxRadius.Value);
         set => _znet.m_zdo.Set(_cache_Key_Radius, value);
@@ -133,7 +133,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     }
     private void OnDestroy() => _instances.Remove(this);
     private string CreatorName => _znet.m_zdo.GetString(ZDOVars.s_creatorName);
-    private bool IsInside(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius + margin;
+    public bool IsInside(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius + margin;
     private Dictionary<long, string> _cachedPermittedPlayers = [];
     public bool IsPermitted(long playerID) => _cachedPermittedPlayers.ContainsKey(playerID);
 
@@ -486,6 +486,27 @@ public static class WardProtectionPatches
             if (!comp.IsPermitted(Game.instance.m_playerProfile.m_playerID) && !Player.m_debugMode)
             {
                 __result = false;
+            }
+        }
+    }
+    [HarmonyPatch(typeof(ShieldGenerator),nameof(ShieldGenerator.CheckProjectile))]
+    private static class ShieldGenerator_CheckProjectile_Patch
+    {
+        private static void Postfix(ref Projectile projectile)
+        {
+            if (!ArcaneWard.WardBlockProjectiles.Value || !projectile) return;
+            foreach (var ward in ArcaneWardComponent._instances)
+            {
+                if (!ward.IsEnabled || !ward.IsBubbleEnabled) continue;
+                Vector3 center = ward.transform.position;
+                Vector3 start = projectile.m_startPoint;
+                Vector3 current = projectile.transform.position; 
+                if (Vector3.Distance(center, start) > ward.Radius && Vector3.Distance(center, current) <= ward.Radius)
+                {
+                    projectile.OnHit(null, current, false, -center);
+                    ZNetScene.instance.Destroy(projectile.gameObject);
+                    return;
+                }
             }
         }
     }
