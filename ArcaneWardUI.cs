@@ -55,7 +55,7 @@ public static class ArcaneWardUI
         Tabs[1] = UI.transform.Find("Canvas/UI/Tabs/Protection");
         Tabs[2] = UI.transform.Find("Canvas/UI/Tabs/Permissions");
         SaveButton = UI.transform.Find("Canvas/UI/Save").GetComponent<Button>();
-        for(int i = 0; i < 3; i++)
+        for(int i = 0; i < 3; ++i)
         {
             int index = i;
             TabButtons[i].onClick.AddListener(() =>

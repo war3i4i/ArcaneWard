@@ -59,9 +59,10 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     {
         if (ArcaneWard.DisabledProtection.Value.HasFlagFast(flag)) return false;
         long id = Game.instance.m_playerProfile.m_playerID;
-        IEnumerable<ArcaneWardComponent> wards = _instances.Where(x => x.IsEnabled && x.IsInside(point));
-        foreach (var ward in wards)
+        for (int i = 0; i < _instances.Count; ++i)
         {
+            ArcaneWardComponent ward = _instances[i];
+            if (!ward.IsEnabled || !ward.IsInside(point)) continue;
             if (!ward.Protection.HasFlagFast(flag)) continue;
             if (skipPermitted && ward.IsPermitted(id)) continue;
             if (flash) ward.Flash();
@@ -107,7 +108,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         set => _znet.m_zdo.Set(_cache_Key_Notify, value);
     }
     private float Fuel
-    { 
+    {
         get => _znet.m_zdo.GetFloat(_cache_Key_Fuel);
         set => _znet.m_zdo.Set(_cache_Key_Fuel, value);
     }
@@ -181,7 +182,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         Protection protection = (Protection)pkg.ReadLong();
         int permittedCount = pkg.ReadInt();
         Dictionary<long, string> permittedPlayers = new();
-        for (int i = 0; i < permittedCount; i++)
+        for (int i = 0; i < permittedCount; ++i)
         {
             long id = pkg.ReadLong();
             string playerName = pkg.ReadString();
@@ -288,20 +289,20 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         bool _enabled = IsEnabled;
         if (_enabled)
         {
-            _wardMaterials.ForEach(m => m.EnableKeyword("_EMISSION")); 
+            for (var i = 0; i < _wardMaterials.Count; ++i) _wardMaterials[i].EnableKeyword("_EMISSION");
             _vfx.SetActive(true);
             _bubble.SetActive(IsBubbleEnabled);
             _animator.enabled = true;
         }
         else
         {
-            _wardMaterials.ForEach(m => m.DisableKeyword("_EMISSION"));
+            for (var i = 0; i < _wardMaterials.Count; ++i) _wardMaterials[i].DisableKeyword("_EMISSION");
             _vfx.SetActive(false);
             _bubble.SetActive(false);
             _animator.enabled = false;
         }
         
-        if (Player.m_localPlayer && IsInside(Player.m_localPlayer.transform.position)) _areaMarker.gameObject.SetActive(true);
+        if (Player.m_localPlayer && IsInside(Player.m_localPlayer.transform.position)) _areaMarker.gameObject.SetActive(ArcaneWard.ShowAreaMarker.Value);
         else _areaMarker.gameObject.SetActive(false);
 
         int r = Radius;
@@ -495,12 +496,13 @@ public static class WardProtectionPatches
         private static void Postfix(ref Projectile projectile)
         {
             if (!ArcaneWard.WardBlockProjectiles.Value || !projectile) return;
-            foreach (var ward in ArcaneWardComponent._instances)
+            for (var i = 0; i < ArcaneWardComponent._instances.Count; ++i)
             {
+                var ward = ArcaneWardComponent._instances[i];
                 if (!ward.IsEnabled || !ward.IsBubbleEnabled) continue;
                 Vector3 center = ward.transform.position;
                 Vector3 start = projectile.m_startPoint;
-                Vector3 current = projectile.transform.position; 
+                Vector3 current = projectile.transform.position;
                 if (Vector3.Distance(center, start) > ward.Radius && Vector3.Distance(center, current) <= ward.Radius)
                 {
                     projectile.OnHit(null, current, false, -center);

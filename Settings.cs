@@ -67,14 +67,17 @@ public class ArcaneWardSettings : SettingsBase
     private GuiToggle _castShadows;
     private GuiToggle _wardSound;
     private GuiToggle _wardFlash;
+    private GuiToggle _areaMarker;
     public override void LoadSettings()
     {
         _castShadows = this.transform.Find("List/CastShadows").GetComponent<GuiToggle>();
         _wardSound = this.transform.Find("List/WardSound").GetComponent<GuiToggle>();
-        _wardFlash = this.transform.Find("List/EnableFlash").GetComponent<GuiToggle>();
+        _wardFlash = this.transform.Find("List/Flash").GetComponent<GuiToggle>();
+        _areaMarker = this.transform.Find("List/AreaMarker").GetComponent<GuiToggle>();
         _castShadows.isOn = ArcaneWard.CastShadows.Value;
         _wardSound.isOn = ArcaneWard.WardSound.Value;
         _wardFlash.isOn = ArcaneWard.WardFlash.Value;
+        _areaMarker.isOn = ArcaneWard.ShowAreaMarker.Value;
     }
 
     public override void SaveSettings()
@@ -82,6 +85,7 @@ public class ArcaneWardSettings : SettingsBase
         ArcaneWard.CastShadows.Value = _castShadows.isOn;
         ArcaneWard.WardSound.Value = _wardSound.isOn;
         ArcaneWard.WardFlash.Value = _wardFlash.isOn;
+        ArcaneWard.ShowAreaMarker.Value = _areaMarker.isOn;
         ArcaneWard._thistype.Config.Save();
         ArcaneWard.ApplyOptions(_castShadows.isOn, _wardSound.isOn);
         Saved();

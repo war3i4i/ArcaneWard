@@ -158,8 +158,7 @@ public static class ServerSide
 
     private static readonly List<ZDO> TempWardsList = [];
     public const string toSearch = "ArcaneWard";
-
-
+    
     private static IEnumerator SendWardsToClients()
     {
         for (;;)
@@ -167,7 +166,11 @@ public static class ServerSide
             TempWardsList.Clear();
             int index = 0;
             while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(toSearch, TempWardsList, ref index)) { yield return null; }
-            foreach (ZDO zdo in TempWardsList) ZDOMan.instance.ForceSendZDO(zdo.m_uid);
+            for (var i = 0; i < TempWardsList.Count; ++i)
+            {
+                ZDOMan.instance.ForceSendZDO(TempWardsList[i].m_uid);
+            }
+
             yield return new WaitForSeconds(10f);
         }
     }

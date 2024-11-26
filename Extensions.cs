@@ -36,7 +36,7 @@ public static class Extensions
     {
         HashSet<long> set = [];
         int @int = z.GetInt("permitted");
-        for (int i = 0; i < @int; i++)
+        for (int i = 0; i < @int; ++i)
         {
             long @long = z.GetLong("pu_id" + i);
             if (@long != 0L) set.Add(@long);
@@ -48,7 +48,7 @@ public static class Extensions
     {
         Dictionary<long, string> dic = new();
         int @int = z.GetInt("permitted");
-        for (int i = 0; i < @int; i++)
+        for (int i = 0; i < @int; ++i)
         {
             long @long = z.GetLong("pu_id" + i);
             string @string = z.GetString("pu_name" + i);

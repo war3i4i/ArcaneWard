@@ -38,6 +38,7 @@ namespace kg_ArcaneWard
         public static ConfigEntry<bool> CastShadows;
         public static ConfigEntry<bool> WardSound;
         public static ConfigEntry<bool> WardFlash;
+        public static ConfigEntry<bool> ShowAreaMarker;
             
         public static GameObject FlashShield;
         public static GameObject FlashShield_Permit;
@@ -63,6 +64,7 @@ namespace kg_ArcaneWard
             {
                 UseExtensions = false,
             };
+            
             Localizer.Load();
             _thistype = this;
             Asset = GetAssetBundle("kg_arcaneward");
@@ -85,6 +87,7 @@ namespace kg_ArcaneWard
             CastShadows = Config.Bind("Visuals", "CastShadows", true, "Whether the Arcane Ward Bubble should cast shadows");
             WardSound = Config.Bind("Visuals", "WardSound", true, "Whether the Arcane Ward should play a sound when activated");
             WardFlash = Config.Bind("Visuals", "WardFlash", true, "Whether the Arcane Ward should flash triggered");
+            ShowAreaMarker = Config.Bind("Visuals", "AreaMarker", true, "Whether the Arcane Ward should display an area marker");
             ApplyOptions(CastShadows.Value, WardSound.Value);
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null) ArcaneWardUI.Init(); 
             ServerSide.ServerSideInit();
@@ -109,9 +112,10 @@ namespace kg_ArcaneWard
                 if (!ZNetScene.instance) return;
                 Piece piece = ArcaneWard_Piece.GetComponent<Piece>();
                 List<Piece.Requirement> requirements = [];
-                foreach (string req in WardRecipe.Value.Split(','))
+                string[] reqs = WardRecipe.Value.Split(',');
+                for (var i = 0; i < reqs.Length; ++i)
                 {
-                    string[] split = req.Split(':');
+                    string[] split = reqs[i].Split(':');
                     if (split.Length != 3) continue;
                     if (!int.TryParse(split[1], out int amount)) continue;
                     if (!bool.TryParse(split[2], out bool recover)) continue;
@@ -123,8 +127,10 @@ namespace kg_ArcaneWard
                     });
                 }
                 piece.m_resources = requirements.ToArray();
-                foreach (var arcaneWardComponent in ArcaneWardComponent._instances)
-                    arcaneWardComponent._piece.m_resources = requirements.ToArray();
+                for (var i = 0; i < ArcaneWardComponent._instances.Count; ++i)
+                {
+                    ArcaneWardComponent._instances[i]._piece.m_resources = requirements.ToArray();
+                }
             }
             
             private static bool done;
@@ -142,18 +148,10 @@ namespace kg_ArcaneWard
                 Piece p = ArcaneWard_Piece.GetComponent<Piece>();
                 Piece ward = guardstone.GetComponent<Piece>();
                 p.m_placeEffect = ward.m_placeEffect;
-            }
-        }
-        [HarmonyPatch(typeof(FejdStartup),nameof(FejdStartup.Start))]
-        private static class FejdStartup_Start_Patch
-        {
-            private static bool done;
-            [UsedImplicitly]
-            private static void Postfix(FejdStartup __instance)
-            { 
-                if (done) return;
-                done = true;
-                ArcaneWard_Piece.transform.Find("Bubble").GetComponent<MeshRenderer>().material.shader = Resources.FindObjectsOfTypeAll<Shader>().FirstOrDefault(x => x.name == "Custom/Distortion");
+
+                var shieldGen = __instance.GetPrefab("charred_shieldgenerator");
+                if (!shieldGen) return;
+                ArcaneWard_Piece.transform.Find("Bubble").GetComponent<MeshRenderer>().material.shader = shieldGen.transform.Find("ForceField/ForceField").GetComponent<MeshRenderer>().material.shader;
             }
         }
         private static ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)

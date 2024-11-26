@@ -70,14 +70,15 @@ public static class ClientSide
             int index = 0;
             while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(ServerSide.toSearch, AllWards, ref index)) { }
             AllWards.RemoveAll(zdo => !zdo.GetPermittedPlayersHashset().Contains(Player.m_localPlayer.GetPlayerID()));
-            foreach (ZDO zdo in AllWards)
-            { 
+            for (var i = 0; i < AllWards.Count; ++i)
+            {
+                var zdo = AllWards[i];
                 if (!zdo.IsValid()) continue;
                 string name = zdo.GetName();
                 float fuel = zdo.GetFloat("Fuel");
                 bool isActivated = zdo.GetBool("Enabled");
                 string colorName = isActivated && fuel > 0 ? "<color=green>" : "<color=red>";
-                Minimap.PinData pinData = new Minimap.PinData 
+                Minimap.PinData pinData = new Minimap.PinData
                 {
                     m_type = PINTYPEWARD,
                     m_name = $"{colorName}{name}</color>",
