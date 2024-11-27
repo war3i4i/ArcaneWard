@@ -44,11 +44,13 @@ public static class ArcaneWardUI
     public static void Init()
     {
         Asset = ArcaneWard.GetAssetBundle("kg_arcanewardui");
+        ArcaneWard.ArcaneWard_Radius_Icon = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img");
+        ArcaneWard.ArcaneWard_Radius_Icon_Disabled = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img_Disabled");
         UI = Object.Instantiate(Asset.LoadAsset<GameObject>("ArcaneWardUI"));
         Object.DontDestroyOnLoad(UI);
         UI.SetActive(false);
         //main
-        TabButtons[0] = UI.transform.Find("Canvas/UI/TopButtons/Overview").GetComponent<Button>();
+        TabButtons[0] = UI.transform.Find("Canvas/UI/TopButtons/Overview").GetComponent<Button>(); 
         TabButtons[1] = UI.transform.Find("Canvas/UI/TopButtons/Protection").GetComponent<Button>();
         TabButtons[2] = UI.transform.Find("Canvas/UI/TopButtons/Permissions").GetComponent<Button>();
         Tabs[0] = UI.transform.Find("Canvas/UI/Tabs/Overview");

@@ -19,7 +19,7 @@ namespace kg_ArcaneWard
     {
         private const string GUID = "kg.ArcaneWard"; 
         private const string NAME = "Arcane Ward";
-        private const string VERSION = "0.2.0";
+        private const string VERSION = "0.3.0";
         
         private static readonly ConfigSync configSync = new ConfigSync(GUID)
             { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
@@ -39,6 +39,8 @@ namespace kg_ArcaneWard
         public static ConfigEntry<bool> WardSound;
         public static ConfigEntry<bool> WardFlash;
         public static ConfigEntry<bool> ShowAreaMarker;
+        public static ConfigEntry<bool> UseShiftLeftClick;
+        public static ConfigEntry<bool> RadiusOnMap;
             
         public static GameObject FlashShield;
         public static GameObject FlashShield_Permit;
@@ -57,6 +59,8 @@ namespace kg_ArcaneWard
         public static AssetBundle Asset;
         public static GameObject ArcaneWard_Piece;
         public static Sprite ArcaneWard_Icon;
+        public static Sprite ArcaneWard_Radius_Icon;
+        public static Sprite ArcaneWard_Radius_Icon_Disabled;
 
         private void Awake()
         {
@@ -78,7 +82,7 @@ namespace kg_ArcaneWard
             WardDefaultRadius = config("General", "WardDefaultRadius", 30, "The default radius of the Arcane Ward");
             WardMinRadius = config("General", "WardMinRadius", 10, "The minimum radius of the Arcane Ward");
             WardMaxRadius = config("General", "WardMaxRadius", 100, "The maximum radius of the Arcane Ward");
-            WardMaxDistanceToFuel = config("General", "WardMinDistanceToFuel", int.MaxValue, "The maximum distance to fuel the Arcane Ward");
+            WardMaxDistanceToFuel = config("General", "WardMaxDistanceToFuel", int.MaxValue, "The maximum distance to fuel the Arcane Ward");
             WardFuelPrefabs = config("General", "WardFuelPrefabs", "Resin,1200,Wood,2400,Coal,3600,Coins,7200", "The prefabs that can be used as fuel for the Arcane Ward");
             WardMaxFuel = config("General", "WardMaxFuel", 604800, "The maximum amount of fuel the Arcane Ward can hold");
             DisabledProtection = config("General", "DisabledProtection", Protection.None, "List of disabled Protection flags");
@@ -88,6 +92,9 @@ namespace kg_ArcaneWard
             WardSound = Config.Bind("Visuals", "WardSound", true, "Whether the Arcane Ward should play a sound when activated");
             WardFlash = Config.Bind("Visuals", "WardFlash", true, "Whether the Arcane Ward should flash triggered");
             ShowAreaMarker = Config.Bind("Visuals", "AreaMarker", true, "Whether the Arcane Ward should display an area marker");
+            UseShiftLeftClick = Config.Bind("General", "UseShiftLeftClick", false, "Whether the Arcane Ward should use Shift + Left Click to open UI from map or just Left Click");
+            RadiusOnMap = Config.Bind("General", "RadiusOnMap", true, "Whether the Arcane Ward should show its radius on the map");
+            
             ApplyOptions(CastShadows.Value, WardSound.Value);
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null) ArcaneWardUI.Init(); 
             ServerSide.ServerSideInit();

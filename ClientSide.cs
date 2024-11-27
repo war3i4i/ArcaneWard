@@ -9,7 +9,9 @@ namespace kg_ArcaneWard;
 public static class ClientSide
 {
     private static readonly Dictionary<Minimap.PinData, ZDO> _pins = new();
+    private static readonly List<Minimap.PinData> _radiusPins = new();
     private const Minimap.PinType PINTYPEWARD = (Minimap.PinType)176;
+    private const Minimap.PinType PINTYPERADIUS = (Minimap.PinType)177;
     [HarmonyPatch(typeof(Game), nameof(Game.Start))] static class Game_Start_Patch { static void Postfix() => ArcaneWardComponent._canPlaceWard = false; }
     [HarmonyPatch(typeof(Player), nameof(Player.PlacePiece))]
     static class PlacePiece_Patch
@@ -54,11 +56,6 @@ public static class ClientSide
             }
         }
     }
-    [HarmonyPatch(typeof(Minimap), nameof(Minimap.GetSprite))]
-    private static class Minimap_GetSprite_Patch
-    {
-        private static void Postfix(Minimap.PinType type, ref Sprite __result) => __result = type is PINTYPEWARD ? ArcaneWard.ArcaneWard_Icon : __result;
-    }
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.SetMapMode))]
     private static class Wards_MapControllerPatch
     {
@@ -77,47 +74,62 @@ public static class ClientSide
                 string name = zdo.GetName();
                 float fuel = zdo.GetFloat("Fuel");
                 bool isActivated = zdo.GetBool("Enabled");
+                int radius = zdo.GetInt("Radius");
                 string colorName = isActivated && fuel > 0 ? "<color=green>" : "<color=red>";
-                Minimap.PinData pinData = new Minimap.PinData
+                Minimap.PinData wardPin = new Minimap.PinData
                 {
                     m_type = PINTYPEWARD,
                     m_name = $"{colorName}{name}</color>",
                     m_pos = zdo.GetPosition(),
+                    m_icon = ArcaneWard.ArcaneWard_Icon,
+                    m_save = false,
+                    m_checked = false,
+                    m_ownerID = 0L
                 };
-                if (!string.IsNullOrEmpty(pinData.m_name))
+                if (!string.IsNullOrEmpty(wardPin.m_name)) wardPin.m_NamePinData = new Minimap.PinNameData(wardPin);
+                _pins.Add(wardPin, zdo);
+
+                if (ArcaneWard.RadiusOnMap.Value)
                 {
-                    pinData.m_NamePinData = new Minimap.PinNameData(pinData);
+                    Minimap.PinData radiusPin = new Minimap.PinData
+                    {
+                        m_type = PINTYPERADIUS,
+                        m_pos = zdo.GetPosition(),
+                        m_name = "", 
+                        m_icon = isActivated && fuel > 0 ? ArcaneWard.ArcaneWard_Radius_Icon : ArcaneWard.ArcaneWard_Radius_Icon_Disabled,
+                        m_save = false,
+                        m_checked = false,
+                        m_ownerID = 0L,
+                        m_worldSize = radius * 2f
+                    };
+                    _radiusPins.Add(radiusPin);
                 }
-
-                pinData.m_icon = ArcaneWard.ArcaneWard_Icon;
-                pinData.m_save = false;
-                pinData.m_checked = false;
-                pinData.m_ownerID = 0L;
-                _pins.Add(pinData, zdo);
             }
-
-            foreach (KeyValuePair<Minimap.PinData, ZDO> p in _pins)
-            {
-                Minimap.instance.m_pins.Add(p.Key);
-            }
+            
+            foreach (Minimap.PinData pin in _radiusPins) Minimap.instance.m_pins.Add(pin);
+            foreach (KeyValuePair<Minimap.PinData, ZDO> pin in _pins) Minimap.instance.m_pins.Add(pin.Key);
         }
         private static void Prefix(Minimap __instance, Minimap.MapMode mode)
         {
             if (mode != Minimap.MapMode.Large)
             {
+                foreach (Minimap.PinData pin in _radiusPins) __instance.RemovePin(pin);
                 foreach (KeyValuePair<Minimap.PinData, ZDO> pin in _pins) __instance.RemovePin(pin.Key);
+                _radiusPins.Clear();
                 _pins.Clear();
             }
 
             if (mode != Minimap.MapMode.Large) return;
             CreatePins();
-        }
-    }
+        } 
+    } 
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.OnMapLeftClick))]
     private static class PatchClickIconMinimap
     {
-        private static bool Prefix()
+        private static bool Prefix(bool __runOriginal) 
         {
+            if (!__runOriginal) return false; 
+            if (ArcaneWard.UseShiftLeftClick.Value && !Input.GetKey(KeyCode.LeftShift)) return true;
             Vector3 pos = Minimap.instance.ScreenToWorldPoint(Input.mousePosition);
             Minimap.PinData closestPin = Extensions.GetCustomPin(PINTYPEWARD, pos, Minimap.instance.m_removeRadius * (Minimap.instance.m_largeZoom * 2f));
             if (closestPin != null && _pins.TryGetValue(closestPin, out ZDO zdo))
@@ -126,7 +138,6 @@ public static class ClientSide
                 Minimap.instance.SetMapMode(Minimap.MapMode.Small);
                 return false;
             }
-
             return true;
         }
     }

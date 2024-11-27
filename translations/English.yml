@@ -59,3 +59,6 @@ kg_arcanewardlimit: Arcane Ward limit reached.
 kg_arcaneward_castshadows: Ward Cast Shadows
 kg_arcaneward_enablewardsound: Enable Ward Sound
 kg_arcaneward_flashenabled: Enable Ward Flash
+kg_arcaneward_areamarker: Show Area Marker
+kg_arcaneward_shiftleftclick: Use Shift + Left Click to open UI
+kg_arcaneward_radiusonmap: Show Radius on Map
