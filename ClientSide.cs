@@ -66,7 +66,7 @@ public static class ClientSide
             List<ZDO> AllWards = [];
             int index = 0;
             while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(ServerSide.toSearch, AllWards, ref index)) { }
-            AllWards.RemoveAll(zdo => !zdo.GetPermittedPlayersHashset().Contains(Player.m_localPlayer.GetPlayerID()));
+            if (!Player.m_debugMode) AllWards.RemoveAll(zdo => !zdo.GetPermittedPlayersHashset().Contains(Player.m_localPlayer.GetPlayerID()));
             for (var i = 0; i < AllWards.Count; ++i)
             {
                 var zdo = AllWards[i];
@@ -120,14 +120,14 @@ public static class ClientSide
             }
 
             if (mode != Minimap.MapMode.Large) return;
-            CreatePins();
-        } 
+            CreatePins(); 
+        }
     } 
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.OnMapLeftClick))]
     private static class PatchClickIconMinimap
     {
-        private static bool Prefix(bool __runOriginal) 
-        {
+        private static bool Prefix(bool __runOriginal)
+        { 
             if (!__runOriginal) return false; 
             if (ArcaneWard.UseShiftLeftClick.Value && !Input.GetKey(KeyCode.LeftShift)) return true;
             Vector3 pos = Minimap.instance.ScreenToWorldPoint(Input.mousePosition);

@@ -194,7 +194,7 @@ public static class ArcaneWardUI
             entry.SetActive(true); 
             var item = ZNetScene.instance.GetPrefab(split[i]).GetComponent<ItemDrop>().m_itemData;
             entry.transform.Find("Icon").GetComponent<Image>().sprite = item.GetIcon();
-            int addSeconds = int.Parse(split[i + 1]);
+            int addSeconds = int.Parse(split[i + 1]); 
             int inventoryAmount = Player.m_localPlayer.GetInventory().CountItems(item.m_shared.m_name);
             entry.transform.Find("text").GetComponent<TMP_Text>().text = Localization.instance.Localize($"{item.m_shared.m_name} ({addSeconds.ToTime()}) [{inventoryAmount}]");
             entry.transform.Find("text").GetComponent<TMP_Text>().color = inventoryAmount >= 1 ? new Color(0.57f, 1f, 0.51f) : new Color(1f, 0.25f, 0.39f);
@@ -205,9 +205,12 @@ public static class ArcaneWardUI
             {
                 int amount = Player.m_localPlayer.GetInventory().CountItems(item.m_shared.m_name);
                 if (amount < 1) return;
-                Player.m_localPlayer.GetInventory().RemoveItem(item.m_shared.m_name, 1);
-                if (_currentWard.HasOwner()) ZRoutedRpc.instance.InvokeRoutedRPC(_currentWard.GetOwner(), _currentWard.m_uid, "RPC_AddFuel", [addSeconds]);
-                else _currentWard.Set(ArcaneWardComponent._cache_Key_Fuel, _currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel) + addSeconds);
+                
+                int useAmount = Input.GetKey(KeyCode.LeftShift) ? Mathf.Min(amount, 5) : 1;
+                
+                Player.m_localPlayer.GetInventory().RemoveItem(item.m_shared.m_name, useAmount);
+                if (_currentWard.HasOwner()) ZRoutedRpc.instance.InvokeRoutedRPC(_currentWard.GetOwner(), _currentWard.m_uid, "RPC_AddFuel", [addSeconds * useAmount]);
+                else _currentWard.Set(ArcaneWardComponent._cache_Key_Fuel, _currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel) + addSeconds * useAmount);
                 UpdateFuel();
             });
         }

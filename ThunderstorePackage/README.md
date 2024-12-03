@@ -38,10 +38,12 @@ Like my mods? Support me: `war3spells@gmail.com` (Paypal)
     Patchnotes
 </span></b></summary>
 
-| Version | Changes                                       |
-|---------|-----------------------------------------------|
-| 0.2.0   | Bubble can now block projectiles from outside |
-| 0.1.0   | Test Mod released                             |
+| Version | Changes                                                                                                                                                       |
+|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0.4.0   | Holding Left Shift while adding fuel will now use 5 items instead of 1. If you're in debug mode (admin) you will see all wards on map so you can disable them |
+| 0.3.0   | Bugfixes. Added more clientside settings                                                                                                                      |
+| 0.2.0   | Bubble can now block projectiles from outside                                                                                                                 |
+| 0.1.0   | Test Mod released                                                                                                                                             |
 </details>
 
 

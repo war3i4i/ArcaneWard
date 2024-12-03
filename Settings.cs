@@ -86,9 +86,9 @@ public class ArcaneWardSettings : SettingsBase
         _radiusOnMap.isOn = ArcaneWard.RadiusOnMap.Value;
     }
 
-    public override void SaveSettings()
-    {
-        ArcaneWard.CastShadows.Value = _castShadows.isOn;
+    public override void SaveSettings() 
+    { 
+        ArcaneWard.CastShadows.Value = _castShadows.isOn; 
         ArcaneWard.WardSound.Value = _wardSound.isOn;
         ArcaneWard.WardFlash.Value = _wardFlash.isOn;
         ArcaneWard.ShowAreaMarker.Value = _areaMarker.isOn;
