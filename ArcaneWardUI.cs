@@ -198,21 +198,42 @@ public static class ArcaneWardUI
             int inventoryAmount = Player.m_localPlayer.GetInventory().CountItems(item.m_shared.m_name);
             entry.transform.Find("text").GetComponent<TMP_Text>().text = Localization.instance.Localize($"{item.m_shared.m_name} ({addSeconds.ToTime()}) [{inventoryAmount}]");
             entry.transform.Find("text").GetComponent<TMP_Text>().color = inventoryAmount >= 1 ? new Color(0.57f, 1f, 0.51f) : new Color(1f, 0.25f, 0.39f);
-            Button button = entry.transform.Find("Add").GetComponent<Button>();
-            button.transform.Find("text").GetComponent<TMP_Text>().color = inventoryAmount >= 1 ? new Color(0.57f, 1f, 0.51f) : new Color(1f, 0.25f, 0.39f);
-            button.interactable = inventoryAmount >= 1;
-            button.onClick.AddListener(() =>
+            Button addOne = entry.transform.Find("Add1").GetComponent<Button>();
+            addOne.transform.Find("text").GetComponent<TMP_Text>().color = inventoryAmount >= 1 ? new Color(0.57f, 1f, 0.51f) : new Color(1f, 0.25f, 0.39f);
+            addOne.interactable = inventoryAmount >= 1;
+            addOne.onClick.AddListener(() =>
             {
                 int amount = Player.m_localPlayer.GetInventory().CountItems(item.m_shared.m_name);
                 if (amount < 1) return;
-                
-                int useAmount = Input.GetKey(KeyCode.LeftShift) ? Mathf.Min(amount, 5) : 1;
-                
-                Player.m_localPlayer.GetInventory().RemoveItem(item.m_shared.m_name, useAmount);
-                if (_currentWard.HasOwner()) ZRoutedRpc.instance.InvokeRoutedRPC(_currentWard.GetOwner(), _currentWard.m_uid, "RPC_AddFuel", [addSeconds * useAmount]);
-                else _currentWard.Set(ArcaneWardComponent._cache_Key_Fuel, _currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel) + addSeconds * useAmount);
+                Player.m_localPlayer.GetInventory().RemoveItem(item.m_shared.m_name, 1); 
+                if (_currentWard.HasOwner()) ZRoutedRpc.instance.InvokeRoutedRPC(_currentWard.GetOwner(), _currentWard.m_uid, "RPC_AddFuel", [addSeconds ]);
+                else _currentWard.Set(ArcaneWardComponent._cache_Key_Fuel, Mathf.Min(_currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel) + addSeconds, ArcaneWard.WardMaxFuel.Value));
                 UpdateFuel();
             });
+            Button addFive = entry.transform.Find("Add5").GetComponent<Button>();
+            addFive.transform.Find("text").GetComponent<TMP_Text>().color = inventoryAmount >= 5 ? new Color(0.57f, 1f, 0.51f) : new Color(1f, 0.25f, 0.39f);
+            addFive.interactable = inventoryAmount >= 5;
+            addFive.onClick.AddListener(() =>
+            {
+                int amount = Player.m_localPlayer.GetInventory().CountItems(item.m_shared.m_name);
+                if (amount < 5) return;
+                Player.m_localPlayer.GetInventory().RemoveItem(item.m_shared.m_name, 5); 
+                if (_currentWard.HasOwner()) ZRoutedRpc.instance.InvokeRoutedRPC(_currentWard.GetOwner(), _currentWard.m_uid, "RPC_AddFuel", [addSeconds * 5]);
+                else _currentWard.Set(ArcaneWardComponent._cache_Key_Fuel, Mathf.Min(_currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel) + addSeconds * 5, ArcaneWard.WardMaxFuel.Value));
+                UpdateFuel();
+            });
+            Button addTen = entry.transform.Find("Add10").GetComponent<Button>();
+            addTen.transform.Find("text").GetComponent<TMP_Text>().color = inventoryAmount >= 10 ? new Color(0.57f, 1f, 0.51f) : new Color(1f, 0.25f, 0.39f);
+            addTen.interactable = inventoryAmount >= 10;
+            addTen.onClick.AddListener(() =>
+            {
+                int amount = Player.m_localPlayer.GetInventory().CountItems(item.m_shared.m_name);
+                if (amount < 10) return;
+                Player.m_localPlayer.GetInventory().RemoveItem(item.m_shared.m_name, 10); 
+                if (_currentWard.HasOwner()) ZRoutedRpc.instance.InvokeRoutedRPC(_currentWard.GetOwner(), _currentWard.m_uid, "RPC_AddFuel", [addSeconds * 10]);
+                else _currentWard.Set(ArcaneWardComponent._cache_Key_Fuel, Mathf.Min(_currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel) + addSeconds * 10, ArcaneWard.WardMaxFuel.Value));
+                UpdateFuel();
+            });  
         }
     }
     private static void UpdateProtection()
@@ -353,7 +374,7 @@ public static class ArcaneWardUI
                     _currentWard.Set(ArcaneWardComponent._cache_Key_LastUpdateTime, currentTime);
                     if (fuel <= 0)
                     { 
-                        _currentWard.Set(ArcaneWardComponent._cache_Key_Enabled, false);
+                        _currentWard.Set(ArcaneWardComponent._cache_Key_Enabled, false); 
                         Enabled.transform.Find("text").GetComponent<TMP_Text>().text = DisabledLocalized;
                         Enabled.transform.Find("text").GetComponent<TMP_Text>().color = Color.red;
                         Enabled.gameObject.name = "-";

@@ -84,7 +84,7 @@ public class ArcaneWardSettings : SettingsBase
         _areaMarker.isOn = ArcaneWard.ShowAreaMarker.Value;
         _useShiftLeftClick.isOn = ArcaneWard.UseShiftLeftClick.Value;
         _radiusOnMap.isOn = ArcaneWard.RadiusOnMap.Value;
-    }
+    } 
 
     public override void SaveSettings() 
     { 
