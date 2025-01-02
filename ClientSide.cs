@@ -10,8 +10,8 @@ public static class ClientSide
 {
     private static readonly Dictionary<Minimap.PinData, ZDO> _pins = new();
     private static readonly List<Minimap.PinData> _radiusPins = new();
-    private const Minimap.PinType PINTYPEWARD = (Minimap.PinType)176;
-    private const Minimap.PinType PINTYPERADIUS = (Minimap.PinType)177;
+    private const Minimap.PinType PINTYPEWARD = (Minimap.PinType)181;
+    private const Minimap.PinType PINTYPERADIUS = (Minimap.PinType)182;
     [HarmonyPatch(typeof(Game), nameof(Game.Start))] static class Game_Start_Patch { static void Postfix() => ArcaneWardComponent._canPlaceWard = false; }
     [HarmonyPatch(typeof(Player), nameof(Player.PlacePiece))]
     static class PlacePiece_Patch
@@ -78,7 +78,7 @@ public static class ClientSide
                 string colorName = isActivated && fuel > 0 ? "<color=green>" : "<color=red>";
                 Minimap.PinData wardPin = new Minimap.PinData
                 {
-                    m_type = PINTYPEWARD,
+                    m_type = PINTYPEWARD, 
                     m_name = $"{colorName}{name}</color>",
                     m_pos = zdo.GetPosition(),
                     m_icon = ArcaneWard.ArcaneWard_Icon,
@@ -122,7 +122,8 @@ public static class ClientSide
             if (mode != Minimap.MapMode.Large) return;
             CreatePins(); 
         }
-    } 
+    }
+    
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.OnMapLeftClick))]
     private static class PatchClickIconMinimap
     {
@@ -131,12 +132,12 @@ public static class ClientSide
             if (!__runOriginal) return false; 
             if (ArcaneWard.UseShiftLeftClick.Value && !Input.GetKey(KeyCode.LeftShift)) return true;
             Vector3 pos = Minimap.instance.ScreenToWorldPoint(Input.mousePosition);
-            Minimap.PinData closestPin = Extensions.GetCustomPin(PINTYPEWARD, pos, Minimap.instance.m_removeRadius * (Minimap.instance.m_largeZoom * 2f));
+            Minimap.PinData closestPin = Extensions.GetCustomPin(PINTYPEWARD, pos, Minimap.instance.m_removeRadius * (Minimap.instance.m_largeZoom * 2f), Extensions.PinVisibility.Visible);
             if (closestPin != null && _pins.TryGetValue(closestPin, out ZDO zdo))
             {
                 ArcaneWardUI.Show(zdo);
                 Minimap.instance.SetMapMode(Minimap.MapMode.Small);
-                return false;
+                return false; 
             }
             return true;
         }

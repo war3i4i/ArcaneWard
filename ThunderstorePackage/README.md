@@ -40,6 +40,7 @@ Like my mods? Support me: `war3spells@gmail.com` (Paypal)
 
 | Version | Changes                                                                                                                                                       |
 |---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0.5.0   | Fixed Localization file not being applied<br/>Fixed compatibility with TargetPortal                                                                           |
 | 0.4.0   | Holding Left Shift while adding fuel will now use 5 items instead of 1. If you're in debug mode (admin) you will see all wards on map so you can disable them |
 | 0.3.0   | Bugfixes. Added more clientside settings                                                                                                                      |
 | 0.2.0   | Bubble can now block projectiles from outside                                                                                                                 |

@@ -116,7 +116,8 @@ public class Localizer
 		Dictionary<string, string> localizationFiles = new();
 		foreach (string file in Directory.GetFiles(Path.GetDirectoryName(Paths.PluginPath)!, $"{plugin.Info.Metadata.Name}.*", SearchOption.AllDirectories).Where(f => fileExtensions.IndexOf(Path.GetExtension(f)) >= 0))
 		{
-			string key = Path.GetFileNameWithoutExtension(file).Split('.')[1];
+			string key = "";
+			try { key = Path.GetFileNameWithoutExtension(file).Split('.')[2]; } catch { continue; }
 			if (localizationFiles.ContainsKey(key))
 			{
 				// Handle duplicate key

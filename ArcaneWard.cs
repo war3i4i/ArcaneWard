@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -19,7 +20,7 @@ namespace kg_ArcaneWard
     {
         private const string GUID = "kg.ArcaneWard"; 
         private const string NAME = "Arcane Ward";
-        private const string VERSION = "0.4.0";
+        private const string VERSION = "0.5.0";
         
         private static readonly ConfigSync configSync = new ConfigSync(GUID)
             { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
@@ -34,14 +35,14 @@ namespace kg_ArcaneWard
         public static ConfigEntry<int> WardMaxFuel;
         public static ConfigEntry<bool> WardBlockProjectiles;
         public static ConfigEntry<Protection> DisabledProtection;
-
+        
         public static ConfigEntry<bool> CastShadows;
         public static ConfigEntry<bool> WardSound;
         public static ConfigEntry<bool> WardFlash;
         public static ConfigEntry<bool> ShowAreaMarker;
         public static ConfigEntry<bool> UseShiftLeftClick;
         public static ConfigEntry<bool> RadiusOnMap;
-            
+        
         public static GameObject FlashShield;
         public static GameObject FlashShield_Permit;
         public static GameObject FlashShield_Fuel;

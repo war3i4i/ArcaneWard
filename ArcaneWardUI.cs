@@ -50,7 +50,7 @@ public static class ArcaneWardUI
         Object.DontDestroyOnLoad(UI);
         UI.SetActive(false);
         //main
-        TabButtons[0] = UI.transform.Find("Canvas/UI/TopButtons/Overview").GetComponent<Button>(); 
+        TabButtons[0] = UI.transform.Find("Canvas/UI/TopButtons/Overview").GetComponent<Button>();
         TabButtons[1] = UI.transform.Find("Canvas/UI/TopButtons/Protection").GetComponent<Button>();
         TabButtons[2] = UI.transform.Find("Canvas/UI/TopButtons/Permissions").GetComponent<Button>();
         Tabs[0] = UI.transform.Find("Canvas/UI/Tabs/Overview");
@@ -205,7 +205,7 @@ public static class ArcaneWardUI
             {
                 int amount = Player.m_localPlayer.GetInventory().CountItems(item.m_shared.m_name);
                 if (amount < 1) return;
-                Player.m_localPlayer.GetInventory().RemoveItem(item.m_shared.m_name, 1); 
+                Player.m_localPlayer.GetInventory().RemoveItem(item.m_shared.m_name, 1);
                 if (_currentWard.HasOwner()) ZRoutedRpc.instance.InvokeRoutedRPC(_currentWard.GetOwner(), _currentWard.m_uid, "RPC_AddFuel", [addSeconds ]);
                 else _currentWard.Set(ArcaneWardComponent._cache_Key_Fuel, Mathf.Min(_currentWard.GetFloat(ArcaneWardComponent._cache_Key_Fuel) + addSeconds, ArcaneWard.WardMaxFuel.Value));
                 UpdateFuel();
