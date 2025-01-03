@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -16,10 +17,21 @@ public static class ClientSide
     [HarmonyPatch(typeof(Player), nameof(Player.PlacePiece))]
     static class PlacePiece_Patch
     {
-        static bool Prefix(Piece piece)
+        static bool Prefix(Piece piece, Vector3 pos)
         {
-            if (!piece.GetComponent<ArcaneWardComponent>()) return true;
-            if (ArcaneWardComponent._canPlaceWard || Player.m_debugMode || ZNet.instance.IsServer()) return true;
+            if (!piece.GetComponent<ArcaneWardComponent>()) return true; 
+            if (Player.m_debugMode) return true;
+            long playerID = Game.instance.m_playerProfile.m_playerID;
+            IEnumerable<ArcaneWardComponent> nonPermittedWards = ArcaneWardComponent._instances.Where(x => !x.IsPermitted(playerID));
+            foreach (var ward in nonPermittedWards)
+            {
+                if (ward.IsInside_X2(pos, 1f))
+                {
+                    MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "<color=red>$kg_arcanewardinside</color>");
+                    return false; 
+                }
+            }
+            if (ArcaneWardComponent._canPlaceWard || ZNet.instance.IsServer()) return true;
             MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "<color=red>$kg_arcanewardlimit</color>");
             return false;
         }

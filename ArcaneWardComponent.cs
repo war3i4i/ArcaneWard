@@ -135,6 +135,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     private void OnDestroy() => _instances.Remove(this);
     private string CreatorName => _znet.m_zdo.GetString(ZDOVars.s_creatorName);
     public bool IsInside(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius + margin;
+    public bool IsInside_X2(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius * 2 + margin;
     private Dictionary<long, string> _cachedPermittedPlayers = [];
     public bool IsPermitted(long playerID) => _cachedPermittedPlayers.ContainsKey(playerID);
 
