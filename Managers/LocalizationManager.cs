@@ -8,6 +8,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
 using JetBrains.Annotations;
+using UnityEngine;
 using YamlDotNet.Serialization;
 
 namespace LocalizationManager;
@@ -21,7 +22,7 @@ public class Localizer
 
 	private static readonly ConditionalWeakTable<Localization, string> localizationLanguage = new();
 
-	private static readonly List<WeakReference<Localization>> localizationObjects = [];
+	private static readonly List<WeakReference<Localization>> localizationObjects = new();
 
 	private static BaseUnityPlugin? _plugin;
 
@@ -46,7 +47,7 @@ public class Localizer
 		}
 	}
 
-	private static readonly List<string> fileExtensions = [".json", ".yml"];
+	private static readonly List<string> fileExtensions = new() { ".json", ".yml" };
 
 	private static void UpdatePlaceholderText(Localization localization, string key)
 	{
@@ -80,7 +81,7 @@ public class Localizer
 
 	public static void AddText(string key, string text)
 	{
-		List<WeakReference<Localization>> remove = [];
+		List<WeakReference<Localization>> remove = new();
 		foreach (WeakReference<Localization> reference in localizationObjects)
 		{
 			if (reference.TryGetTarget(out Localization localization))
@@ -114,14 +115,21 @@ public class Localizer
 		localizationLanguage.Add(__instance, language);
 
 		Dictionary<string, string> localizationFiles = new();
-		foreach (string file in Directory.GetFiles(Path.GetDirectoryName(Paths.PluginPath)!, $"{plugin.Info.Metadata.Name}.*", SearchOption.AllDirectories).Where(f => fileExtensions.IndexOf(Path.GetExtension(f)) >= 0))
+		foreach (string file in Directory.GetFiles(Path.GetDirectoryName(Paths.PluginPath)!, $"{plugin.Info.Metadata.GUID}.*", SearchOption.AllDirectories).Where(f => fileExtensions.IndexOf(Path.GetExtension(f)) >= 0))
 		{
 			string key = "";
-			try { key = Path.GetFileNameWithoutExtension(file).Split('.')[2]; } catch { continue; }
+			try
+			{ 
+				key = Path.GetFileNameWithoutExtension(file).Split('.')[2];
+			}
+			catch
+			{
+				continue;
+			}
+
 			if (localizationFiles.ContainsKey(key))
 			{
-				// Handle duplicate key
-				UnityEngine.Debug.LogWarning($"Duplicate key {key} found for {plugin.Info.Metadata.Name}. The duplicate file found at {file} will be skipped.");
+				Debug.LogWarning($"Duplicate key {key} found for {plugin.Info.Metadata.GUID}. The duplicate file found at {file} will be skipped.");
 			}
 			else
 			{
@@ -131,13 +139,13 @@ public class Localizer
 
 		if (LoadTranslationFromAssembly("English") is not { } englishAssemblyData)
 		{
-			throw new Exception($"Found no English localizations in mod {plugin.Info.Metadata.Name}. Expected an embedded resource translations/English.json or translations/English.yml.");
+			throw new Exception($"Found no English localizations in mod {plugin.Info.Metadata.GUID}. Expected an embedded resource translations/English.json or translations/English.yml.");
 		}
 
 		Dictionary<string, string>? localizationTexts = new DeserializerBuilder().IgnoreFields().Build().Deserialize<Dictionary<string, string>?>(System.Text.Encoding.UTF8.GetString(englishAssemblyData));
 		if (localizationTexts is null)
 		{
-			throw new Exception($"Localization for mod {plugin.Info.Metadata.Name} failed: Localization file was empty.");
+			throw new Exception($"Localization for mod {plugin.Info.Metadata.GUID} failed: Localization file was empty.");
 		}
 
 		string? localizationData = null;
@@ -171,7 +179,7 @@ public class Localizer
 			UpdatePlaceholderText(__instance, s.Key);
 		}
 	}
-
+ 
 	static Localizer()
 	{
 		Harmony harmony = new("org.bepinex.helpers.LocalizationManager");
