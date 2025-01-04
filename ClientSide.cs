@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Guilds;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -14,25 +15,29 @@ public static class ClientSide
     private const Minimap.PinType PINTYPEWARD = (Minimap.PinType)181;
     private const Minimap.PinType PINTYPERADIUS = (Minimap.PinType)182;
     [HarmonyPatch(typeof(Game), nameof(Game.Start))] static class Game_Start_Patch { static void Postfix() => ArcaneWardComponent._canPlaceWard = false; }
-    [HarmonyPatch(typeof(Player), nameof(Player.PlacePiece))]
+    [HarmonyPatch(typeof(Player), nameof(Player.TryPlacePiece))]
     static class PlacePiece_Patch
     {
-        static bool Prefix(Piece piece, Vector3 pos)
+        static bool Prefix(Piece piece, ref bool __result)
         {
-            if (!piece.GetComponent<ArcaneWardComponent>()) return true; 
+            if (piece.GetComponent<ArcaneWardComponent>() is not {} aw) return true;
             if (Player.m_debugMode) return true;
+            if (!Player.m_localPlayer?.m_placementGhost) return true; 
+            Vector3 pos = Player.m_localPlayer.m_placementGhost.transform.position;
             long playerID = Game.instance.m_playerProfile.m_playerID;
-            IEnumerable<ArcaneWardComponent> nonPermittedWards = ArcaneWardComponent._instances.Where(x => !x.IsPermitted(playerID));
+            IEnumerable<ArcaneWardComponent> nonPermittedWards = ArcaneWardComponent._instances.Where(x => !x.IsPermitted(playerID, Cache.CachedGuildId));
             foreach (var ward in nonPermittedWards)
             {
                 if (ward.IsInside_X2(pos, 1f))
-                {
+                { 
                     MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "<color=red>$kg_arcanewardinside</color>");
-                    return false; 
+                    __result = false;
+                    return false;
                 }
             }
-            if (ArcaneWardComponent._canPlaceWard || ZNet.instance.IsServer()) return true;
+            if (ZNet.instance.IsServer() || ArcaneWardComponent._canPlaceWard) return true;
             MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "<color=red>$kg_arcanewardlimit</color>");
+            __result = false;
             return false;
         }
     }
@@ -71,27 +76,33 @@ public static class ClientSide
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.SetMapMode))]
     private static class Wards_MapControllerPatch
     {
-        private static void CreatePins()
+       private static void CreatePins()
         {
             foreach (KeyValuePair<Minimap.PinData, ZDO> pin in _pins) Minimap.instance.RemovePin(pin.Key);
             _pins.Clear();
-            List<ZDO> AllWards = []; 
+            List<ZDO> AllWards = [];  
             int index = 0;
             while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(ServerSide.toSearch, AllWards, ref index)) { }
-            if (!Player.m_debugMode) AllWards.RemoveAll(zdo => !zdo.GetPermittedPlayersHashset().Contains(Player.m_localPlayer.GetPlayerID()));
+            if (!Player.m_debugMode) AllWards.RemoveAll(zdo =>
+            {
+                if (zdo.IsGuild(out int guildID)) return Cache.CachedGuildId != guildID;
+                return !zdo.GetPermittedPlayersHashset().Contains(Player.m_localPlayer.GetPlayerID());
+            });
+            Guild myGuild = Guilds.API.GetOwnGuild();
             for (var i = 0; i < AllWards.Count; ++i)
             {
                 var zdo = AllWards[i];
                 if (!zdo.IsValid()) continue;
                 string name = zdo.GetName();
                 float fuel = zdo.GetFloat("Fuel");
-                bool isActivated = zdo.GetBool("Enabled");
-                int radius = zdo.GetInt("Radius");
+                bool isActivated = zdo.GetBool("Enabled"); 
+                int radius = zdo.GetInt("Radius"); 
                 string colorName = isActivated && fuel > 0 ? "<color=green>" : "<color=red>";
+                string guildWard = zdo.IsGuild(out int guildID) && myGuild != null && myGuild.General.id == guildID ? $"\n<color=yellow>[{myGuild.Name}]</color>" : "";
                 Minimap.PinData wardPin = new Minimap.PinData
                 {
                     m_type = PINTYPEWARD, 
-                    m_name = $"{colorName}{name}</color>",
+                    m_name = $"{colorName}{name}</color>{guildWard}",
                     m_pos = zdo.GetPosition(),
                     m_icon = ArcaneWard.ArcaneWard_Icon,
                     m_save = false,

@@ -54,6 +54,9 @@
         <Reference Include="fastJSON">
           <HintPath>Libs\fastJSON.dll</HintPath>
         </Reference>
+        <Reference Include="Guilds">
+          <HintPath>Libs\GuildsAPI.dll</HintPath>
+        </Reference>
         <Reference Include="gui_framework">
           <HintPath>Libs\gui_framework.dll</HintPath>
         </Reference>
@@ -106,6 +109,7 @@
         <Compile Include="ArcaneWardUI.cs" />
         <Compile Include="ClientSide.cs" />
         <Compile Include="Extensions.cs" />
+        <Compile Include="Cache.cs" />
         <Compile Include="Managers\LocalizationManager.cs" />
         <Compile Include="Managers\ServerSync.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
@@ -126,6 +130,7 @@
       <EmbeddedResource Include="translations\English.yml" />
     </ItemGroup>
     <ItemGroup>
+      <Content Include="ILRepack.targets" />
       <Content Include="ThunderstorePackage\kg_ArcaneWard.dll" />
       <Content Include="ThunderstorePackage\kg_ArcaneWard.dll.mdb" />
       <Content Include="ThunderstorePackage\manifest.json" />

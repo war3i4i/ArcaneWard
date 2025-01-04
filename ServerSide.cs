@@ -96,19 +96,23 @@ public static class ServerSide
     {
         private static readonly int ArcaneWard_ID = "ArcaneWard_ID".GetStableHashCode();
         private static readonly int Ward = "ArcaneWard".GetStableHashCode();
+        private static readonly int Ward_Guild = "ArcaneWard_Guild".GetStableHashCode();
         static void Prefix(ZDOMan __instance, ZDOID uid)
         {
             if (!ZNet.instance.IsServer()) return;
             ZDO zdo = __instance.GetZDO(uid);
             if (zdo == null) return;
-            if (zdo.m_prefab != Ward) return;
-            string id = zdo.GetString(ArcaneWard_ID);
-            if (!_wardManager.PlayersWardData.ContainsKey(id)) return;
-            _wardManager.PlayersWardData[id]--;
-            if (_wardManager.PlayersWardData[id] < 0) _wardManager.PlayersWardData[id] = 0;
-            _wardManager.Save();
-            ZNetPeer peer = ZNet.instance.GetPeerByHostName(id);
-            if (peer != null) ZRoutedRpc.instance.InvokeRoutedRPC(peer.m_uid, "ArcaneWard Data", _wardManager.CanBuildWard(id));
+            if (zdo.m_prefab == Ward)
+            {
+                string id = zdo.GetString(ArcaneWard_ID);
+                if (!_wardManager.PlayersWardData.ContainsKey(id)) return;
+                _wardManager.PlayersWardData[id]--;
+                if (_wardManager.PlayersWardData[id] < 0) _wardManager.PlayersWardData[id] = 0;
+                _wardManager.Save();
+                ZNetPeer peer = ZNet.instance.GetPeerByHostName(id);
+                if (peer != null) ZRoutedRpc.instance.InvokeRoutedRPC(peer.m_uid, "ArcaneWard Data", _wardManager.CanBuildWard(id));
+            }
+         
         }
     }
 

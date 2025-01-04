@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Guilds;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -29,6 +30,7 @@ public static class ArcaneWardUI
     private static TMP_Text BubbleFractionText;
     private static TMP_Text Fuel;
     private static GameObject FuelEntry;
+    private static Button GuildWard;
     //protection tab
     private static GameObject ProtectionEntry;
     //permissions tab
@@ -47,9 +49,11 @@ public static class ArcaneWardUI
         ArcaneWard.ArcaneWard_Radius_Icon = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img");
         ArcaneWard.ArcaneWard_Radius_Icon_Disabled = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img_Disabled");
         UI = Object.Instantiate(Asset.LoadAsset<GameObject>("ArcaneWardUI"));
-        Object.DontDestroyOnLoad(UI);
+        Object.DontDestroyOnLoad(UI); 
         UI.SetActive(false);
         //main
+        var rect = UI.transform.Find("Canvas/UI").GetComponent<RectTransform>();
+        rect.sizeDelta = Guilds.API.IsLoaded() ? new Vector2(rect.sizeDelta.x, 750f) : new Vector2(rect.sizeDelta.x, 700f);
         TabButtons[0] = UI.transform.Find("Canvas/UI/TopButtons/Overview").GetComponent<Button>();
         TabButtons[1] = UI.transform.Find("Canvas/UI/TopButtons/Protection").GetComponent<Button>();
         TabButtons[2] = UI.transform.Find("Canvas/UI/TopButtons/Permissions").GetComponent<Button>();
@@ -59,7 +63,7 @@ public static class ArcaneWardUI
         SaveButton = UI.transform.Find("Canvas/UI/Save").GetComponent<Button>();
         for(int i = 0; i < 3; ++i)
         {
-            int index = i;
+            int index = i; 
             TabButtons[i].onClick.AddListener(() =>
             {
                 for(int j = 0; j < 3; j++)
@@ -80,6 +84,8 @@ public static class ArcaneWardUI
         Enabled = Tabs[0].Find("Options/Enabled/Enabled").GetComponent<Button>();
         Bubble = Tabs[0].Find("Options/Bubble/Enabled").GetComponent<Button>();
         Notify = Tabs[0].Find("Options/Notify/Enabled").GetComponent<Button>();
+        GuildWard = Tabs[0].Find("Options/GuildWard/Enabled").GetComponent<Button>();
+        GuildWard.transform.parent.gameObject.SetActive(Guilds.API.IsLoaded());
         Radius = Tabs[0].Find("Options/Radius/Slider").GetComponent<Slider>();
         RadiusText = Tabs[0].Find("Options/Radius/SliderText").GetComponent<TMP_Text>();
         Radius.onValueChanged.AddListener(value => RadiusText.text = value.ToString(CultureInfo.InvariantCulture));
@@ -109,6 +115,13 @@ public static class ArcaneWardUI
             Notify.transform.Find("text").GetComponent<TMP_Text>().text = enabled ? DisabledLocalized : EnabledLocalized;
             Notify.transform.Find("text").GetComponent<TMP_Text>().color = enabled ? Color.red : Color.green;
         });
+        GuildWard.onClick.AddListener(() =>
+        {
+            bool enabled = GuildWard.gameObject.name == "+";
+            GuildWard.gameObject.name = enabled ? "-" : "+";
+            GuildWard.transform.Find("text").GetComponent<TMP_Text>().text = enabled ? DisabledLocalized : EnabledLocalized;
+            GuildWard.transform.Find("text").GetComponent<TMP_Text>().color = enabled ? Color.red : Color.green;
+        });
         //protection
         ProtectionEntry = Tabs[1].Find("Scroll View/Viewport/Content/ProtectionEntry").gameObject;
         //permissions
@@ -131,6 +144,7 @@ public static class ArcaneWardUI
             pkg.Write(Enabled.gameObject.name == "+");
             pkg.Write(Bubble.gameObject.name == "+");
             pkg.Write(Notify.gameObject.name == "+");
+            pkg.Write(GuildWard.gameObject.name == "+");
             int radius = Mathf.Clamp((int)Radius.value, ArcaneWard.WardMinRadius.Value, ArcaneWard.WardMaxRadius.Value);
             pkg.Write(radius);
             int fraction = Mathf.Clamp((int)BubbleFraction.value, 0, 20);
@@ -157,6 +171,7 @@ public static class ArcaneWardUI
             _currentWard.Set(ArcaneWardComponent._cache_Key_Enabled, Enabled.gameObject.name == "+");
             _currentWard.Set(ArcaneWardComponent._cache_Key_Bubble, Bubble.gameObject.name == "+");
             _currentWard.Set(ArcaneWardComponent._cache_Key_Notify, Notify.gameObject.name == "+");
+            _currentWard.Set(ArcaneWardComponent._cache_Key_GuildWard, GuildWard.gameObject.name == "+");
             int radius = Mathf.Clamp((int)Radius.value, ArcaneWard.WardMinRadius.Value, ArcaneWard.WardMaxRadius.Value);
             _currentWard.Set(ArcaneWardComponent._cache_Key_Radius, radius);
             int fraction = Mathf.Clamp((int)BubbleFraction.value, 0, 20);
@@ -331,14 +346,18 @@ public static class ArcaneWardUI
         Notify.transform.Find("text").GetComponent<TMP_Text>().text = isNotifyEnabled ? EnabledLocalized : DisabledLocalized;
         Notify.transform.Find("text").GetComponent<TMP_Text>().color = isNotifyEnabled ? Color.green : Color.red;
         Notify.gameObject.name = isNotifyEnabled ? "+" : "-";
+        bool isGuildWard = ward.GetBool(ArcaneWardComponent._cache_Key_GuildWard);
+        GuildWard.transform.Find("text").GetComponent<TMP_Text>().text = isGuildWard ? EnabledLocalized : DisabledLocalized;
+        GuildWard.transform.Find("text").GetComponent<TMP_Text>().color = isGuildWard ? Color.green : Color.red;
+        GuildWard.gameObject.name = isGuildWard ? "+" : "-";
         Radius.minValue = ArcaneWard.WardMinRadius.Value;
-        Radius.maxValue = ArcaneWard.WardMaxRadius.Value;
+        Radius.maxValue = ArcaneWard.WardMaxRadius.Value; 
         Radius.value = ward.GetInt(ArcaneWardComponent._cache_Key_Radius, ArcaneWard.WardDefaultRadius.Value);
         RadiusText.text = Radius.value.ToString(CultureInfo.InvariantCulture);
         BubbleFraction.minValue = 0;
         BubbleFraction.maxValue = 20;
         BubbleFraction.value = ward.GetInt(ArcaneWardComponent._cache_Key_BubbleFraction, 1); 
-        BubbleFractionText.text = BubbleFraction.value.ToString(CultureInfo.InvariantCulture);
+        BubbleFractionText.text = BubbleFraction.value.ToString(CultureInfo.InvariantCulture); 
         _fuelTextCoroutine = ArcaneWard._thistype.StartCoroutine(UpdateFuelText());
         UpdateFuel();
         UpdateProtection();
@@ -351,6 +370,14 @@ public static class ArcaneWardUI
         var me = Game.instance.m_playerProfile.m_playerID;
         var owner = ward.GetLong(ZDOVars.s_creator);
         TabButtons[2].gameObject.SetActive(me == owner);
+        
+        //guilds api
+        var guildText = GuildWard.transform.parent.Find("text").GetComponent<TMP_Text>();
+        guildText.text = "$kg_arcaneward_guildward".Localize();
+        int guildID = ward.GetInt(ArcaneWardComponent._cache_Key_GuildID);
+        Guild g = Guilds.API.GetGuild(guildID);
+        if (g == null) guildText.text += " <color=red>[Guild not registered]</color>";
+        else guildText.text += $" <color=green>[{g.Name}]</color>";
     }
     private static Coroutine _fuelTextCoroutine;
     private static IEnumerator UpdateFuelText()

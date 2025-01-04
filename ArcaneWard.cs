@@ -15,12 +15,13 @@ using UnityEngine.Rendering;
 
 namespace kg_ArcaneWard
 {
+    [BepInDependency("org.bepinex.plugins.guilds", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInPlugin(GUID, NAME, VERSION)]
     public class ArcaneWard : BaseUnityPlugin
     {
         private const string GUID = "kg.ArcaneWard"; 
-        private const string NAME = "Arcane Ward";
-        private const string VERSION = "0.5.2";
+        private const string NAME = "Arcane Ward"; 
+        private const string VERSION = "0.6.0";
         
         private static readonly ConfigSync configSync = new ConfigSync(GUID)
             { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
@@ -97,7 +98,12 @@ namespace kg_ArcaneWard
             RadiusOnMap = Config.Bind("General", "RadiusOnMap", true, "Whether the Arcane Ward should show its radius on the map");
             
             ApplyOptions(CastShadows.Value, WardSound.Value);
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null) ArcaneWardUI.Init(); 
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null)
+            {
+                ArcaneWardUI.Init();
+                Guilds.API.RegisterOnGuildJoined(((guild, player) => Cache.RecacheGuildID()));
+                Guilds.API.RegisterOnGuildLeft(((guild, player) => Cache.RecacheGuildID()));
+            } 
             ServerSide.ServerSideInit();
             new Harmony(GUID).PatchAll();
         }
@@ -118,7 +124,7 @@ namespace kg_ArcaneWard
             public static void ResetRecipe()
             {
                 if (!ZNetScene.instance) return;
-                Piece piece = ArcaneWard_Piece.GetComponent<Piece>();
+                Piece awp = ArcaneWard_Piece.GetComponent<Piece>();
                 List<Piece.Requirement> requirements = [];
                 string[] reqs = WardRecipe.Value.Split(',');
                 for (var i = 0; i < reqs.Length; ++i)
@@ -134,7 +140,7 @@ namespace kg_ArcaneWard
                         m_recover = recover
                     });
                 }
-                piece.m_resources = requirements.ToArray();
+                awp.m_resources = requirements.ToArray();
                 for (var i = 0; i < ArcaneWardComponent._instances.Count; ++i)
                 {
                     ArcaneWardComponent._instances[i]._piece.m_resources = requirements.ToArray();
@@ -154,6 +160,7 @@ namespace kg_ArcaneWard
                 FlashShield_Permit = guardstone.m_addPermittedEffect.m_effectPrefabs[0].m_prefab;
                 FlashShield_Fuel = guardstone.m_removedPermittedEffect.m_effectPrefabs[0].m_prefab;
                 Piece p = ArcaneWard_Piece.GetComponent<Piece>();
+                
                 Piece ward = guardstone.GetComponent<Piece>();
                 p.m_placeEffect = ward.m_placeEffect;
 
