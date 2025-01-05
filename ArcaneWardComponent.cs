@@ -162,7 +162,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         _piece = GetComponent<Piece>();
         _bubble = transform.Find("Bubble").gameObject;
         _vfx = transform.Find("VFX").gameObject;
-        _vfx.SetActive(IsEnabled);
+        _vfx.SetActive(IsEnabled); 
         _animator = transform.Find("Ward").GetComponent<Animator>();
         _animator.enabled = false;
         _effectArea = transform.Find("PlayerBase").GetComponent<EffectArea>();

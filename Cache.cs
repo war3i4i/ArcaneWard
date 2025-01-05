@@ -17,4 +17,9 @@ public static class Cache
     {
         private static void Postfix(Player __instance) => RecacheGuildID();
     }
+    [HarmonyPatch(typeof(Game),nameof(Game.Awake))]
+    private static class Game_Start_Patch
+    {
+        private static void Postfix(Game __instance) => CachedGuildId = -1;
+    }
 }

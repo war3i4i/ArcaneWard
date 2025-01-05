@@ -64,6 +64,8 @@ namespace kg_ArcaneWard
         public static Sprite ArcaneWard_Radius_Icon;
         public static Sprite ArcaneWard_Radius_Icon_Disabled;
 
+        public static bool IsServer => SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
+        
         private void Awake()
         {
             JSON.Parameters = new JSONParameters()
@@ -117,14 +119,14 @@ namespace kg_ArcaneWard
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.Escape) && ArcaneWardUI.IsVisible) ArcaneWardUI.Hide();   
-        }
+        } 
         [HarmonyPatch(typeof(ZNetScene),nameof(ZNetScene.Awake))]
         private static class ZNetScene_Awake_Patch
         {
             public static void ResetRecipe()
             {
                 if (!ZNetScene.instance) return;
-                Piece awp = ArcaneWard_Piece.GetComponent<Piece>();
+                Piece piece = ArcaneWard_Piece.GetComponent<Piece>();
                 List<Piece.Requirement> requirements = [];
                 string[] reqs = WardRecipe.Value.Split(',');
                 for (var i = 0; i < reqs.Length; ++i)
@@ -133,14 +135,16 @@ namespace kg_ArcaneWard
                     if (split.Length != 3) continue;
                     if (!int.TryParse(split[1], out int amount)) continue;
                     if (!bool.TryParse(split[2], out bool recover)) continue;
+                    ItemDrop resItem = ObjectDB.instance.GetItemPrefab(split[0])?.GetComponent<ItemDrop>();
+                    if (!resItem) continue;
                     requirements.Add(new Piece.Requirement()
                     {
-                        m_resItem = ObjectDB.instance.GetItemPrefab(split[0]).GetComponent<ItemDrop>(),
+                        m_resItem = resItem,
                         m_amount = amount,
                         m_recover = recover
                     });
                 }
-                awp.m_resources = requirements.ToArray();
+                piece.m_resources = requirements.ToArray();
                 for (var i = 0; i < ArcaneWardComponent._instances.Count; ++i)
                 {
                     ArcaneWardComponent._instances[i]._piece.m_resources = requirements.ToArray();

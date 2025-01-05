@@ -84,11 +84,11 @@ public static class ClientSide
             int index = 0;
             while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(ServerSide.toSearch, AllWards, ref index)) { }
             if (!Player.m_debugMode) AllWards.RemoveAll(zdo =>
-            {
+            { 
                 if (zdo.IsGuild(out int guildID)) return Cache.CachedGuildId != guildID;
                 return !zdo.GetPermittedPlayersHashset().Contains(Player.m_localPlayer.GetPlayerID());
             });
-            Guild myGuild = Guilds.API.GetOwnGuild();
+            Guild myGuild = Guilds.API.GetOwnGuild(); 
             for (var i = 0; i < AllWards.Count; ++i)
             {
                 var zdo = AllWards[i];
