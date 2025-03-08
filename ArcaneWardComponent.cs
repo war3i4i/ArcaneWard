@@ -6,8 +6,8 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using fastJSON;
-using Guilds;
 using HarmonyLib;
+using Splatform;
 using UnityEngine;
 
 namespace kg_ArcaneWard;
@@ -65,7 +65,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
             ArcaneWardComponent ward = _instances[i];
             if (!ward.IsEnabled || !ward.IsInside(point)) continue;
             if (!ward.Protection.HasFlagFast(flag)) continue;
-            if (skipPermitted && ward.IsPermitted(id, Cache.CachedGuildId)) continue;
+            if (skipPermitted && ward.IsPermitted(id)) continue;
             if (flash) ward.Flash();
             return true;
         }
@@ -77,27 +77,15 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public static readonly int _cache_Key_Bubble = "Bubble".GetStableHashCode();
     public static readonly int _cache_Key_BubbleFraction = "BubbleFraction".GetStableHashCode();
     public static readonly int _cache_Key_Notify = "Notify".GetStableHashCode();
-    public static readonly int _cache_Key_GuildWard = "IsGuild".GetStableHashCode();
-    public static readonly int _cache_Key_GuildID = "GuildID".GetStableHashCode();
     public static readonly int _cache_Key_Radius = "Radius".GetStableHashCode();
     public static readonly int _cache_Key_Protection = "Protection".GetStableHashCode();
     public static readonly int _cache_Key_LastNotifyTime = "LastNotifyTime".GetStableHashCode();
     public static readonly int _cache_Key_Fuel = "Fuel".GetStableHashCode();
-    public static readonly int _cache_Key_LastUpdateTime = "LastUpdateTime".GetStableHashCode();
+    public static readonly int _cache_Key_LastUpdateTime = "LastUpdateTime".GetStableHashCode(); 
     public string Name
     {
         get => _znet.m_zdo.GetString(_cache_Key_Name, "$kg_arcaneward");
         set => _znet.m_zdo.Set(_cache_Key_Name, value);
-    }
-    public bool GuildWard
-    {
-        get => _znet.m_zdo.GetBool(_cache_Key_GuildWard);
-        set => _znet.m_zdo.Set(_cache_Key_GuildWard, value);
-    }
-    public int GuildID
-    {
-        get => _znet.m_zdo.GetInt(_cache_Key_GuildID);
-        set => _znet.m_zdo.Set(_cache_Key_GuildID, value);
     }
     public bool IsEnabled => IsActivated && Fuel > 0;
     public bool IsActivated
@@ -150,9 +138,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public bool IsInside(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius + margin;
     public bool IsInside_X2(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius * 2 + margin;
     private Dictionary<long, string> _cachedPermittedPlayers = [];
-    private int _cachedGuildID;
-    private bool _cachedGuildWard;
-    public bool IsPermitted(long id, long guildID) => _cachedPermittedPlayers.ContainsKey(id) || (_cachedGuildWard && guildID == _cachedGuildID);
+    public bool IsPermitted(long id) => _cachedPermittedPlayers.ContainsKey(id);
     private void Awake()
     { 
         _znet = GetComponent<ZNetView>();
@@ -169,20 +155,16 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         _effectArea.transform.localScale = new Vector3(Radius * 2, Radius * 2, Radius * 2);
         _wardMaterials = transform.GetChild(3).GetComponentsInChildren<MeshRenderer>(true).Select(x => x.material).ToList();
         _cachedPermittedPlayers = _znet.m_zdo.GetPermittedPlayers();
-        _cachedGuildWard = GuildWard;
-        _cachedGuildID = GuildID;
         _areaMarker.gameObject.SetActive(false);
         _bubble.GetComponent<MeshRenderer>().material.SetFloat(RefractionIntensity, BubbleFraction * 0.005f);
-        _znet.Register<string, bool>("RPC_ResetCache", ResetCache);
+        _znet.Register<string>("RPC_ResetCache", ResetCache);
         _znet.Register<bool>("RPC_EnableSwitch", EnabledSwitch);
         _znet.Register<int>("RPC_AddFuel", AddFuel);
         _znet.Register<ZPackage>("RPC_UpdateData", UpdateData);
         if (_znet.IsOwner() && CreatorName == "")
         {
             string creatorName = Game.instance.GetPlayerProfile().GetName();
-            Setup(creatorName, ZNet.m_onlineBackend == OnlineBackendType.Steamworks
-                ? PrivilegeManager.GetNetworkUserId().Split('_')[1]
-                : PrivilegeManager.GetNetworkUserId(), Cache.CachedGuildId);
+            Setup(creatorName, PlatformManager.DistributionPlatform.LocalUser.PlatformUserID.m_userID.ToString());
         }
         InvokeRepeating(nameof(UpdateStatus), 1f, 1);
     }
@@ -194,7 +176,6 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         bool wardEnabled = pkg.ReadBool();
         bool bubble = pkg.ReadBool();
         bool notify = pkg.ReadBool();
-        bool guildward = pkg.ReadBool();
         int radius = pkg.ReadInt();
         int fraction = pkg.ReadInt();
         Protection protection = (Protection)pkg.ReadLong();
@@ -213,9 +194,8 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         Radius = radius;
         BubbleFraction = fraction;
         Protection = protection;
-        GuildWard = guildward;
         _znet.m_zdo.SetPermittedPlayers(permittedPlayers);
-        _znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(permittedPlayers), guildward]);
+        _znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(permittedPlayers)]);
     }
     
     private void AddFuel(long sender, int fuel)
@@ -234,21 +214,19 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         Instantiate(prevState ? ArcaneWard.FlashShield_Deactivate : ArcaneWard.FlashShield_Activate, transform.position, Quaternion.identity);
         LastUpdateTime = (int)EnvMan.instance.m_totalSeconds;
     }
-    private void ResetCache(long obj, string permittedJSON, bool guildWard)
+    private void ResetCache(long obj, string permittedJSON)
     {
         _cachedPermittedPlayers = JSON.ToObject<Dictionary<long, string>>(permittedJSON);
-        _cachedGuildWard = guildWard;
         _cachedRadius = -1;
         _cachedFraction = -1;
     }
 
-    private void Setup(string creatorName, string id, int guildID)
+    private void Setup(string creatorName, string id)
     {
         LastUpdateTime = (int)EnvMan.instance.m_totalSeconds;
         _canPlaceWard = false;
         _znet.m_zdo.Set(ZDOVars.s_creatorName, creatorName);
         _znet.m_zdo.Set("ArcaneWard_ID", id);
-        GuildID = guildID;
         Dictionary<long, string> owner = new() { { Game.instance.m_playerProfile.m_playerID, creatorName + " <color=green>[$kg_arcaneward_owner]</color>" } };
         _znet.m_zdo.SetPermittedPlayers(owner);
         _znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(owner), false]);
@@ -258,7 +236,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public string GetHoverText()
     { 
         if (!_znet.IsValid() || !Player.m_localPlayer) return "";
-        if (!IsPermitted(Game.instance.m_playerProfile.m_playerID, Cache.CachedGuildId) && !Player.m_debugMode)
+        if (!IsPermitted(Game.instance.m_playerProfile.m_playerID) && !Player.m_debugMode)
         {
             return "$kg_cantviewarcaneward".Localize();  
         }
@@ -281,7 +259,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     {
         if (EnvMan.instance.m_totalSeconds - LastFlashTime <= 2f) return;
          
-        if (IsNotifyEnabled && !IsPermitted(Game.instance.m_playerProfile.m_playerID, Cache.CachedGuildId))
+        if (IsNotifyEnabled && !IsPermitted(Game.instance.m_playerProfile.m_playerID))
         {
             int now = (int)EnvMan.instance.m_totalSeconds; 
             if (now - LastNotifyTime >= 8)
@@ -359,7 +337,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     
     public bool Interact(Humanoid user, bool hold, bool alt)
     {
-        if (!IsPermitted(Player.m_localPlayer.GetPlayerID(), Cache.CachedGuildId) && !Player.m_debugMode) return false;
+        if (!IsPermitted(Player.m_localPlayer.GetPlayerID()) && !Player.m_debugMode) return false;
         if (Input.GetKey(KeyCode.LeftShift))
         {
             ArcaneWardUI.Show(_znet.m_zdo);
@@ -378,7 +356,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     {
         if (!_znet.IsValid() || !Player.m_localPlayer) return;
         if (!IsInside(Player.m_localPlayer.transform.position, margin: 0.5f)) return;
-        if (!IsEnabled || IsPermitted(Game.instance.m_playerProfile.m_playerID, Cache.CachedGuildId)) return;
+        if (!IsEnabled || IsPermitted(Game.instance.m_playerProfile.m_playerID)) return;
         if (!Protection.HasFlagFast(Protection.Push_Players)) return;
         if (ArcaneWard.DisabledProtection.Value.HasFlagFast(Protection.Push_Players)) return;
         Player p = Player.m_localPlayer;
@@ -504,7 +482,7 @@ public static class WardProtectionPatches
         private static void Postfix(Piece __instance, ref bool __result)
         {
             if (__instance.GetComponent<ArcaneWardComponent>() is not {} comp) return;
-            if (!comp.IsPermitted(Game.instance.m_playerProfile.m_playerID, Cache.CachedGuildId) && !Player.m_debugMode)
+            if (!comp.IsPermitted(Game.instance.m_playerProfile.m_playerID) && !Player.m_debugMode)
             {
                 __result = false;
             }

@@ -66,7 +66,8 @@ public static class ServerSide
         string folder = Path.Combine(Paths.ConfigPath, "ArcaneWard"); 
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
         _wardManager = new WardManager(Path.Combine(folder, "WardData.json"));
-        VIPplayersList = new SyncedList(Path.Combine(folder, "VIPplayers.txt"), "");
+        FileHelpers.FileLocation loc = new FileHelpers.FileLocation(FileHelpers.FileSource.Local, Path.Combine(folder, "VIPplayers.txt"));
+        VIPplayersList = new SyncedList(loc, "");
         MaxAmountOfWards = ArcaneWard._thistype.Config.Bind("Limitations", "MaxAmountOfWards", 10, "Max amount of wards");
         MaxAmountOfWards_VIP = ArcaneWard._thistype.Config.Bind("Limitations", "MaxAmountOfWards_VIP", 30, "Max amount of wards for VIP");
 
@@ -96,7 +97,6 @@ public static class ServerSide
     {
         private static readonly int ArcaneWard_ID = "ArcaneWard_ID".GetStableHashCode();
         private static readonly int Ward = "ArcaneWard".GetStableHashCode();
-        private static readonly int Ward_Guild = "ArcaneWard_Guild".GetStableHashCode();
         static void Prefix(ZDOMan __instance, ZDOID uid)
         {
             if (!ZNet.instance.IsServer()) return;

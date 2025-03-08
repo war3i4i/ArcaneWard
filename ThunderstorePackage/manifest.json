@@ -1,6 +1,6 @@
 ﻿{
   "name": "Arcane_Ward",
-  "version_number": "0.5.2",
+  "version_number": "0.6.1",
   "website_url": "https://github.com/war3i4i/ArcaneWard",
   "description": "Ward with configurable UI protection features and distanced view / control by map click",
   "dependencies": [

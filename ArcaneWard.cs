@@ -13,15 +13,14 @@ using ServerSync;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace kg_ArcaneWard
+namespace kg_ArcaneWard 
 {
-    [BepInDependency("org.bepinex.plugins.guilds", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin(GUID, NAME, VERSION)]
+    [BepInPlugin(GUID, NAME, VERSION)] 
     public class ArcaneWard : BaseUnityPlugin
     {
         private const string GUID = "kg.ArcaneWard"; 
         private const string NAME = "Arcane Ward"; 
-        private const string VERSION = "0.6.0";
+        private const string VERSION = "0.6.2";
         
         private static readonly ConfigSync configSync = new ConfigSync(GUID)
             { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
@@ -103,8 +102,6 @@ namespace kg_ArcaneWard
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null)
             {
                 ArcaneWardUI.Init();
-                Guilds.API.RegisterOnGuildJoined(((guild, player) => Cache.RecacheGuildID()));
-                Guilds.API.RegisterOnGuildLeft(((guild, player) => Cache.RecacheGuildID()));
             } 
             ServerSide.ServerSideInit();
             new Harmony(GUID).PatchAll();

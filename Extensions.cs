@@ -69,12 +69,7 @@ public static class Extensions
     }
 
     public static string GetName(this ZDO z) => z.GetString(ArcaneWardComponent._cache_Key_Name, "$kg_arcaneward");
-    public static bool IsGuild(this ZDO z, out int guildID)
-    {
-        guildID = z.GetInt(ArcaneWardComponent._cache_Key_GuildID);
-        return z.GetBool(ArcaneWardComponent._cache_Key_GuildWard);
-    }
-
+    
     public static void SetPermittedPlayers(this ZDO ward, Dictionary<long, string> users)
     {
         ward.Set("permitted", users.Count);
