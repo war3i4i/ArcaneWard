@@ -81,7 +81,7 @@ namespace kg_ArcaneWard
             
             WardRecipe = config("General", "WardRecipe", "Iron:10:true,Wood:5:true", "The recipe for the Arcane Ward");
             WardRecipe.SettingChanged += (_, _) => ZNetScene_Awake_Patch.ResetRecipe();
-            WardDefaultRadius = config("General", "WardDefaultRadius", 30, "The default radius of the Arcane Ward");
+            WardDefaultRadius = config("General", "WardDefaultRadius", 30, "The default radius of the Arcane Ward"); 
             WardMinRadius = config("General", "WardMinRadius", 10, "The minimum radius of the Arcane Ward");
             WardMaxRadius = config("General", "WardMaxRadius", 100, "The maximum radius of the Arcane Ward");
             WardMaxDistanceToFuel = config("General", "WardMaxDistanceToFuel", int.MaxValue, "The maximum distance to fuel the Arcane Ward");
@@ -90,12 +90,13 @@ namespace kg_ArcaneWard
             DisabledProtection = config("General", "DisabledProtection", Protection.None, "List of disabled Protection flags");
             WardBlockProjectiles = config("General", "WardBlockProjectiles", true, "Whether the Arcane Ward should block projectiles");
             
-            CastShadows = Config.Bind("Visuals", "CastShadows", true, "Whether the Arcane Ward Bubble should cast shadows");
+            CastShadows = Config.Bind("Visuals", "CastShadows", true, "Whether the Arcane Ward Bubble should cast shadows"); 
             WardSound = Config.Bind("Visuals", "WardSound", true, "Whether the Arcane Ward should play a sound when activated");
             WardFlash = Config.Bind("Visuals", "WardFlash", true, "Whether the Arcane Ward should flash triggered");
             ShowAreaMarker = Config.Bind("Visuals", "AreaMarker", true, "Whether the Arcane Ward should display an area marker");
             UseShiftLeftClick = Config.Bind("General", "UseShiftLeftClick", false, "Whether the Arcane Ward should use Shift + Left Click to open UI from map or just Left Click");
             RadiusOnMap = Config.Bind("General", "RadiusOnMap", true, "Whether the Arcane Ward should show its radius on the map");
+            ShowIconsOnMap = config("General", "ShowIconsOnMap", true, "Whether the Arcane Ward should show its icon on the map");
             
             ApplyOptions(CastShadows.Value, WardSound.Value);
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null)
