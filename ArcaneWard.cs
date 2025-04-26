@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -7,11 +6,10 @@ using BepInEx;
 using BepInEx.Configuration;
 using fastJSON;
 using HarmonyLib;
-using JetBrains.Annotations;
 using LocalizationManager;
 using ServerSync;
 using UnityEngine;
-using UnityEngine.Rendering;
+using UnityEngine.Rendering; 
 
 namespace kg_ArcaneWard 
 {
@@ -20,20 +18,21 @@ namespace kg_ArcaneWard
     {
         private const string GUID = "kg.ArcaneWard"; 
         private const string NAME = "Arcane Ward"; 
-        private const string VERSION = "0.6.2";
+        private const string VERSION = "0.6.5";
         
         private static readonly ConfigSync configSync = new ConfigSync(GUID)
             { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
 
-        public static ArcaneWard _thistype;
+        public static ArcaneWard _thistype;  
         public static ConfigEntry<string> WardRecipe;
         public static ConfigEntry<int> WardDefaultRadius;
-        public static ConfigEntry<int> WardMinRadius;
+        public static ConfigEntry<int> WardMinRadius; 
         public static ConfigEntry<int> WardMaxRadius;
         public static ConfigEntry<int> WardMaxDistanceToFuel;
         public static ConfigEntry<string> WardFuelPrefabs;
         public static ConfigEntry<int> WardMaxFuel;
         public static ConfigEntry<bool> WardBlockProjectiles;
+        public static ConfigEntry<bool> ShowIconsOnMap;
         public static ConfigEntry<Protection> DisabledProtection;
         
         public static ConfigEntry<bool> CastShadows;

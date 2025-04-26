@@ -37,6 +37,7 @@ public enum Protection : long
     [Extensions.ProtectionIcon("SledgeDemolisher")] No_Build_Damage = 262144,
     [Extensions.ProtectionIcon("Carrot")] Pickables = 524288,
     [Extensions.ProtectionIcon("piece_cartographytable")] Map_Table = 1048576,
+    [Extensions.ProtectionIcon("PickaxeIron")] Terrain_Modification = 2097152,
 }
 
 public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
@@ -52,10 +53,10 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public Piece _piece;
     private GameObject _vfx;
     private GameObject _bubble;
-    private Animator _animator;
-    private EffectArea _effectArea;
+    private Animator _animator; 
+    private EffectArea _effectArea; 
     private CircleProjector _areaMarker;
-
+ 
     public static bool CheckFlag(Vector3 point, bool skipPermitted, Protection flag, bool flash = true)
     {
         if (ArcaneWard.DisabledProtection.Value.HasFlagFast(flag)) return false;
@@ -63,8 +64,8 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         for (int i = 0; i < _instances.Count; ++i)
         {
             ArcaneWardComponent ward = _instances[i];
-            if (!ward.IsEnabled || !ward.IsInside(point)) continue;
             if (!ward.Protection.HasFlagFast(flag)) continue;
+            if (!ward.IsEnabled || !ward.IsInside(point)) continue;
             if (skipPermitted && ward.IsPermitted(id)) continue;
             if (flash) ward.Flash();
             return true;
@@ -79,7 +80,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public static readonly int _cache_Key_Notify = "Notify".GetStableHashCode();
     public static readonly int _cache_Key_Radius = "Radius".GetStableHashCode();
     public static readonly int _cache_Key_Protection = "Protection".GetStableHashCode();
-    public static readonly int _cache_Key_LastNotifyTime = "LastNotifyTime".GetStableHashCode();
+    private static readonly int _cache_Key_LastNotifyTime = "LastNotifyTime".GetStableHashCode();
     public static readonly int _cache_Key_Fuel = "Fuel".GetStableHashCode();
     public static readonly int _cache_Key_LastUpdateTime = "LastUpdateTime".GetStableHashCode(); 
     public string Name
@@ -135,7 +136,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     }
     private void OnDestroy() => _instances.Remove(this);
     private string CreatorName => _znet.m_zdo.GetString(ZDOVars.s_creatorName);
-    public bool IsInside(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius + margin;
+    private bool IsInside(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius + margin;
     public bool IsInside_X2(Vector3 point, float margin = 0f) => Vector3.Distance(point, transform.position) <= Radius * 2 + margin;
     private Dictionary<long, string> _cachedPermittedPlayers = [];
     public bool IsPermitted(long id) => _cachedPermittedPlayers.ContainsKey(id);
@@ -164,7 +165,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         if (_znet.IsOwner() && CreatorName == "")
         {
             string creatorName = Game.instance.GetPlayerProfile().GetName();
-            Setup(creatorName, PlatformManager.DistributionPlatform.LocalUser.PlatformUserID.m_userID.ToString());
+            Setup(creatorName, PlatformManager.DistributionPlatform.LocalUser.PlatformUserID.m_userID);
         }
         InvokeRepeating(nameof(UpdateStatus), 1f, 1);
     }
@@ -417,7 +418,7 @@ public static class WardProtectionPatches
         }
         private static bool Prefix(MapTable __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, true, Protection.Map_Table);
     }
-    [HarmonyPatch(typeof(Player),nameof(Player.PlacePiece))]
+    [HarmonyPatch(typeof(Player),nameof(Player.PlacePiece))] 
     private static class Player_PlacePiece_Patch
     {
         private static bool Prefix(Vector3 pos) => !ArcaneWardComponent.CheckFlag(pos, true, Protection.Build_Piece);
@@ -475,6 +476,15 @@ public static class WardProtectionPatches
     private static class Pickable_Interact_Patch
     {
         private static bool Prefix(Pickable __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, true, Protection.Pickables);
+    }
+    [HarmonyPatch(typeof(Attack),nameof(Attack.SpawnOnHitTerrain))]
+    private static class Attack_SpawnOnHitTerrain_Patch
+    {
+        private static bool Prefix(GameObject prefab, Vector3 hitPoint)
+        { 
+            if (!prefab.GetComponentInChildren<TerrainModifier>() && !prefab.GetComponentInChildren<TerrainOp>()) return true;
+            return !ArcaneWardComponent.CheckFlag(hitPoint, true, Protection.Terrain_Modification);
+        }
     }
     [HarmonyPatch(typeof(Piece),nameof(Piece.CanBeRemoved))]
     private static class Piece__Patch 

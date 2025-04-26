@@ -55,6 +55,17 @@ public static class ServerSide
         }
     }
 
+    [HarmonyPatch(typeof(ZNet),nameof(ZNet.Awake))]
+    private static class ZNet_Awake_Patch 
+    {
+        private static void Prefix(ZNet __instance)
+        {
+            string folder = Path.Combine(Paths.ConfigPath, "ArcaneWard"); 
+            FileHelpers.FileLocation loc = new FileHelpers.FileLocation(FileHelpers.FileSource.Local, Path.Combine(folder, "VIPplayers.txt"));
+            VIPplayersList = new SyncedList(loc, "");
+        }
+    } 
+    
     private static SyncedList VIPplayersList;
     private static WardManager _wardManager;
     private static ConfigEntry<int> MaxAmountOfWards;
@@ -66,8 +77,7 @@ public static class ServerSide
         string folder = Path.Combine(Paths.ConfigPath, "ArcaneWard"); 
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
         _wardManager = new WardManager(Path.Combine(folder, "WardData.json"));
-        FileHelpers.FileLocation loc = new FileHelpers.FileLocation(FileHelpers.FileSource.Local, Path.Combine(folder, "VIPplayers.txt"));
-        VIPplayersList = new SyncedList(loc, "");
+  
         MaxAmountOfWards = ArcaneWard._thistype.Config.Bind("Limitations", "MaxAmountOfWards", 10, "Max amount of wards");
         MaxAmountOfWards_VIP = ArcaneWard._thistype.Config.Bind("Limitations", "MaxAmountOfWards_VIP", 30, "Max amount of wards for VIP");
 

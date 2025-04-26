@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using BepInEx;
@@ -59,7 +60,7 @@ public class SyncedConfigEntry<T> : OwnConfigEntryBase
 
 public abstract class CustomSyncedValueBase
 {
-	public event Action? ValueChanged;
+	public Action? ValueChanged;
 
 	public object? LocalBaseValue;
 
@@ -100,6 +101,8 @@ public sealed class CustomSyncedValue<T> : CustomSyncedValueBase
 		get => (T)BoxedValue!;
 		set => BoxedValue = value;
 	}
+
+	public void Update() => ValueChanged?.Invoke();
 
 	public CustomSyncedValue(ConfigSync configSync, string identifier, T value = default!, int priority = 0) : base(configSync, identifier, typeof(T), priority)
 	{
@@ -164,10 +167,10 @@ public class ConfigSync
 
 	public event Action<bool>? SourceOfTruthChanged;
 
-	private static readonly HashSet<ConfigSync> configSyncs = [];
+	private static readonly HashSet<ConfigSync> configSyncs = new();
 
-	private readonly HashSet<OwnConfigEntryBase> allConfigs = [];
-	private HashSet<CustomSyncedValueBase> allCustomValues = [];
+	private readonly HashSet<OwnConfigEntryBase> allConfigs = new();
+	private HashSet<CustomSyncedValueBase> allCustomValues = new();
 
 	private static bool isServer;
 
@@ -193,7 +196,7 @@ public class ConfigSync
 		if (configData(configEntry) is not SyncedConfigEntry<T> syncedEntry)
 		{
 			syncedEntry = new SyncedConfigEntry<T>(configEntry);
-			AccessTools.DeclaredField(typeof(ConfigDescription), "<Tags>k__BackingField").SetValue(configEntry.Description, new object[] { new ConfigurationManagerAttributes() }.Concat(configEntry.Description.Tags ?? []).Concat([syncedEntry]).ToArray());
+			AccessTools.DeclaredField(typeof(ConfigDescription), "<Tags>k__BackingField").SetValue(configEntry.Description, new object[] { new ConfigurationManagerAttributes() }.Concat(configEntry.Description.Tags ?? Array.Empty<object>()).Concat(new[] { syncedEntry }).ToArray());
 			configEntry.SettingChanged += (_, _) =>
 			{
 				if (!ProcessingServerUpdate && syncedEntry.SynchronizedConfig)
@@ -222,13 +225,13 @@ public class ConfigSync
 
 	internal void AddCustomValue(CustomSyncedValueBase customValue)
 	{
-		if (allCustomValues.Select(v => v.Identifier).Concat(["serverversion"]).Contains(customValue.Identifier))
+		if (allCustomValues.Select(v => v.Identifier).Concat(new[] { "serverversion" }).Contains(customValue.Identifier))
 		{
 			throw new Exception("Cannot have multiple settings with the same name or with a reserved name (serverversion)");
 		}
 
 		allCustomValues.Add(customValue);
-		allCustomValues = [..allCustomValues.OrderByDescending(v => v.Priority)];
+		allCustomValues = new HashSet<CustomSyncedValueBase>(allCustomValues.OrderByDescending(v => v.Priority));
 		customValue.ValueChanged += () =>
 		{
 			if (!ProcessingServerUpdate)
@@ -237,6 +240,7 @@ public class ConfigSync
 			}
 		};
 	}
+	
 
 	[HarmonyPatch(typeof(ZRpc), "HandlePackage")]
 	private static class SnatchCurrentlyHandlingRPC
@@ -268,20 +272,20 @@ public class ConfigSync
 			{
 				MethodInfo? listContainsId = AccessTools.DeclaredMethod(typeof(ZNet), "ListContainsId");
 				SyncedList adminList = (SyncedList)AccessTools.DeclaredField(typeof(ZNet), "m_adminList").GetValue(ZNet.instance);
-				List<string> CurrentList = [..adminList.GetList()];
+				List<string> CurrentList = new(adminList.GetList());
 				for (;;)
 				{
 					yield return new WaitForSeconds(30);
 					if (!adminList.GetList().SequenceEqual(CurrentList))
 					{
-						CurrentList = [..adminList.GetList()];
+						CurrentList = new List<string>(adminList.GetList());
 
 						void SendAdmin(List<ZNetPeer> peers, bool isAdmin)
 						{
-							ZPackage package = ConfigsToPackage(packageEntries:
-							[
-								new PackageEntry { section = "Internal", key = "lockexempt", type = typeof(bool), value = isAdmin }
-							]);
+							ZPackage package = ConfigsToPackage(packageEntries: new[]
+							{
+								new PackageEntry { section = "Internal", key = "lockexempt", type = typeof(bool), value = isAdmin },
+							});
 
 							if (configSyncs.First() is { } configSync)
 							{
@@ -292,7 +296,7 @@ public class ConfigSync
 						List<ZNetPeer> adminPeer = ZNet.instance.GetPeers().Where(p =>
 						{
 							string client = p.m_rpc.GetSocket().GetHostName();
-							return listContainsId is null ? adminList.Contains(client) : (bool)listContainsId.Invoke(ZNet.instance, [adminList, client]);
+							return listContainsId is null ? adminList.Contains(client) : (bool)listContainsId.Invoke(ZNet.instance, new object[] { adminList, client });
 						}).ToList();
 						List<ZNetPeer> nonAdminPeer = ZNet.instance.GetPeers().Except(adminPeer).ToList();
 						SendAdmin(nonAdminPeer, false);
@@ -330,7 +334,7 @@ public class ConfigSync
 	private const byte COMPRESSED_CONFIG = 4;
 
 	private readonly Dictionary<string, SortedDictionary<int, byte[]>> configValueCache = new();
-	private readonly List<KeyValuePair<long, string>> cacheExpirations = []; // avoid leaking memory
+	private readonly List<KeyValuePair<long, string>> cacheExpirations = new(); // avoid leaking memory
 
 	private void RPC_FromServerConfigSync(ZRpc rpc, ZPackage package)
 	{
@@ -353,7 +357,7 @@ public class ConfigSync
 			{
 				MethodInfo? listContainsId = AccessTools.DeclaredMethod(typeof(ZNet), "ListContainsId");
 				SyncedList adminList = (SyncedList)AccessTools.DeclaredField(typeof(ZNet), "m_adminList").GetValue(ZNet.instance);
-				bool exempt = listContainsId is null ? adminList.Contains(client) : (bool)listContainsId.Invoke(ZNet.instance, [adminList, client]);
+				bool exempt = listContainsId is null ? adminList.Contains(client) : (bool)listContainsId.Invoke(ZNet.instance, new object[] { adminList, client });
 				if (!exempt)
 				{
 					return false;
@@ -761,7 +765,7 @@ public class ConfigSync
 		{
 			public volatile bool finished = false;
 			public volatile int versionMatchQueued = -1;
-			public readonly List<ZPackage> Package = [];
+			public readonly List<ZPackage> Package = new();
 			public readonly ISocket Original;
 
 			public BufferingSocket(ISocket original)
@@ -825,7 +829,7 @@ public class ConfigSync
 				BufferingSocket bufferingSocket = new(rpc.GetSocket());
 				AccessTools.DeclaredField(typeof(ZRpc), "m_socket").SetValue(rpc, bufferingSocket);
 				// Don't replace on steam sockets, RPC_PeerInfo does peer.m_socket as ZSteamSocket - which will cause a nullref when replaced
-				if (AccessTools.DeclaredMethod(typeof(ZNet), "GetPeer", [typeof(ZRpc)]).Invoke(__instance, [rpc]) is ZNetPeer peer && ZNet.m_onlineBackend != OnlineBackendType.Steamworks)
+				if (AccessTools.DeclaredMethod(typeof(ZNet), "GetPeer", new[] { typeof(ZRpc) }).Invoke(__instance, new object[] { rpc }) is ZNetPeer peer && ZNet.m_onlineBackend != OnlineBackendType.Steamworks)
 				{
 					AccessTools.DeclaredField(typeof(ZNetPeer), "m_socket").SetValue(peer, bufferingSocket);
 				}
@@ -833,6 +837,30 @@ public class ConfigSync
 				__state ??= new Dictionary<Assembly, BufferingSocket>();
 				__state[Assembly.GetExecutingAssembly()] = bufferingSocket;
 			}
+		}
+		/*
+		235	0280	ldloc.1
+		236	0281	ldfld	class ISocket ZNetPeer::m_socket
+		237	0286	isinst	ZPlayFabSocket
+		238	028B	ldfld	string ZPlayFabSocket::m_remotePlayerId
+		 */
+		[HarmonyTranspiler]
+		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			CodeMatcher matcher = new(instructions);
+			var socketField = AccessTools.Field(typeof(ZNetPeer), "m_socket");
+			var remotePlayerIdField = AccessTools.Field(typeof(ZPlayFabSocket), "m_remotePlayerId");
+			matcher.MatchForward(false,
+					new CodeMatch(OpCodes.Ldloc_1), 
+					new CodeMatch(OpCodes.Ldfld, socketField),
+					new CodeMatch(OpCodes.Isinst),
+					new CodeMatch(OpCodes.Ldfld, remotePlayerIdField));
+			if (matcher.IsInvalid) return instructions;
+			matcher.SetAndAdvance(OpCodes.Ldstr, "none");
+			matcher.SetOpcodeAndAdvance(OpCodes.Nop);
+			matcher.SetOpcodeAndAdvance(OpCodes.Nop);
+			matcher.SetOpcodeAndAdvance(OpCodes.Nop);
+			return matcher.InstructionEnumeration();
 		}
 
 		[HarmonyPostfix]
@@ -848,7 +876,7 @@ public class ConfigSync
 				if (rpc.GetSocket() is BufferingSocket bufferingSocket)
 				{
 					AccessTools.DeclaredField(typeof(ZRpc), "m_socket").SetValue(rpc, bufferingSocket.Original);
-					if (AccessTools.DeclaredMethod(typeof(ZNet), "GetPeer", [typeof(ZRpc)]).Invoke(__instance, [rpc]) is ZNetPeer peer)
+					if (AccessTools.DeclaredMethod(typeof(ZNet), "GetPeer", new[] { typeof(ZRpc) }).Invoke(__instance, new object[] { rpc }) is ZNetPeer peer)
 					{
 						AccessTools.DeclaredField(typeof(ZNetPeer), "m_socket").SetValue(peer, bufferingSocket.Original);
 					}
@@ -871,7 +899,7 @@ public class ConfigSync
 				}
 			}
 
-			if (AccessTools.DeclaredMethod(typeof(ZNet), "GetPeer", [typeof(ZRpc)]).Invoke(__instance, [rpc]) is not ZNetPeer peer)
+			if (AccessTools.DeclaredMethod(typeof(ZNet), "GetPeer", new[] { typeof(ZRpc) }).Invoke(__instance, new object[] { rpc }) is not ZNetPeer peer)
 			{
 				SendBufferedData();
 				return;
@@ -881,7 +909,7 @@ public class ConfigSync
 			{
 				foreach (ConfigSync configSync in configSyncs)
 				{
-					List<PackageEntry> entries = [];
+					List<PackageEntry> entries = new();
 					if (configSync.CurrentVersion != null)
 					{
 						entries.Add(new PackageEntry { section = "Internal", key = "serverversion", type = typeof(string), value = configSync.CurrentVersion });
@@ -889,11 +917,11 @@ public class ConfigSync
 
 					MethodInfo? listContainsId = AccessTools.DeclaredMethod(typeof(ZNet), "ListContainsId");
 					SyncedList adminList = (SyncedList)AccessTools.DeclaredField(typeof(ZNet), "m_adminList").GetValue(ZNet.instance);
-					entries.Add(new PackageEntry { section = "Internal", key = "lockexempt", type = typeof(bool), value = listContainsId is null ? adminList.Contains(rpc.GetSocket().GetHostName()) : listContainsId.Invoke(ZNet.instance, [adminList, rpc.GetSocket().GetHostName()]) });
+					entries.Add(new PackageEntry { section = "Internal", key = "lockexempt", type = typeof(bool), value = listContainsId is null ? adminList.Contains(rpc.GetSocket().GetHostName()) : listContainsId.Invoke(ZNet.instance, new object[] { adminList, rpc.GetSocket().GetHostName() }) });
 
 					ZPackage package = ConfigsToPackage(configSync.allConfigs.Select(c => c.BaseConfig), configSync.allCustomValues, entries, false);
 
-					yield return __instance.StartCoroutine(configSync.sendZPackage([peer], package));
+					yield return __instance.StartCoroutine(configSync.sendZPackage(new List<ZNetPeer> { peer }, package));
 
 				}
 
@@ -990,8 +1018,8 @@ public class ConfigSync
 
 	private static ZPackage ConfigsToPackage(IEnumerable<ConfigEntryBase>? configs = null, IEnumerable<CustomSyncedValueBase>? customValues = null, IEnumerable<PackageEntry>? packageEntries = null, bool partial = true)
 	{
-		List<ConfigEntryBase> configList = configs?.Where(config => configData(config)!.SynchronizedConfig).ToList() ?? [];
-		List<CustomSyncedValueBase> customValueList = customValues?.ToList() ?? [];
+		List<ConfigEntryBase> configList = configs?.Where(config => configData(config)!.SynchronizedConfig).ToList() ?? new List<ConfigEntryBase>();
+		List<CustomSyncedValueBase> customValueList = customValues?.ToList() ?? new List<CustomSyncedValueBase>();
 		ZPackage package = new();
 		package.Write(partial ? PARTIAL_CONFIGS : (byte)0);
 		package.Write(configList.Count + customValueList.Count + (packageEntries?.Count() ?? 0));
@@ -1049,7 +1077,7 @@ public class ConfigSync
 			return;
 		}
 
-		ZRpc.Serialize([value], ref package);
+		ZRpc.Serialize(new[] { value }, ref package);
 	}
 
 	private static object ReadValueWithTypeFromZPackage(ZPackage package, Type type)
@@ -1096,15 +1124,15 @@ public class ConfigSync
 			MethodInfo adder = collectionType.GetMethod("Add")!;
 			for (int i = 0; i < entriesCount; ++i)
 			{
-				adder.Invoke(list, [ReadValueWithTypeFromZPackage(package, type.GenericTypeArguments[0])]);
+				adder.Invoke(list, new[] { ReadValueWithTypeFromZPackage(package, type.GenericTypeArguments[0]) });
 			}
 			return list;
 		}
 
 		ParameterInfo param = (ParameterInfo)FormatterServices.GetUninitializedObject(typeof(ParameterInfo));
 		AccessTools.DeclaredField(typeof(ParameterInfo), "ClassImpl").SetValue(param, type);
-		List<object> data = [];
-		ZRpc.Deserialize([null, param], package, ref data);
+		List<object> data = new();
+		ZRpc.Deserialize(new[] { null, param }, package, ref data);
 		return data.First();
 	}
 
@@ -1120,7 +1148,7 @@ public class ConfigSync
 [HarmonyPatch]
 public class VersionCheck
 {
-	private static readonly HashSet<VersionCheck> versionChecks = [];
+	private static readonly HashSet<VersionCheck> versionChecks = new();
 	private static readonly Dictionary<string, string> notProcessedNames = new();
 
 	public string Name;
@@ -1156,7 +1184,7 @@ public class VersionCheck
 	private string? ReceivedMinimumRequiredVersion;
 
 	// Tracks which clients have passed the version check (only for servers).
-	private readonly List<ZRpc> ValidatedClients = [];
+	private readonly List<ZRpc> ValidatedClients = new();
 
 	// Optional backing field to use ConfigSync values (will override other fields).
 	private ConfigSync? ConfigSync;
@@ -1169,7 +1197,7 @@ public class VersionCheck
 		}
 
 		Harmony harmony = new("org.bepinex.helpers.ServerSync");
-		foreach (Type type in typeof(ConfigSync).GetNestedTypes(BindingFlags.NonPublic).Concat([typeof(VersionCheck)]).Where(t => t.IsClass))
+		foreach (Type type in typeof(ConfigSync).GetNestedTypes(BindingFlags.NonPublic).Concat(new[] { typeof(VersionCheck) }).Where(t => t.IsClass))
 		{
 			harmony.PatchAll(type);
 		}
@@ -1177,7 +1205,7 @@ public class VersionCheck
 
 	static VersionCheck()
 	{
-		typeof(ThreadingHelper).GetMethod("StartSyncInvoke")!.Invoke(ThreadingHelper.Instance, [(Action)PatchServerSync]);
+		typeof(ThreadingHelper).GetMethod("StartSyncInvoke")!.Invoke(ThreadingHelper.Instance, new object[] { (Action)PatchServerSync });
 	}
 
 	public VersionCheck(string name)

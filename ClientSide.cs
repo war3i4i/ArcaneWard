@@ -134,12 +134,11 @@ public static class ClientSide
                 _radiusPins.Clear();
                 _pins.Clear();
             }
-
             if (mode != Minimap.MapMode.Large) return;
-            CreatePins(); 
+            if (ArcaneWard.ShowIconsOnMap.Value) CreatePins(); 
         }
     }
-    
+     
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.OnMapLeftClick))]
     private static class PatchClickIconMinimap
     {
@@ -149,13 +148,10 @@ public static class ClientSide
             if (ArcaneWard.UseShiftLeftClick.Value && !Input.GetKey(KeyCode.LeftShift)) return true;
             Vector3 pos = Minimap.instance.ScreenToWorldPoint(Input.mousePosition);
             Minimap.PinData closestPin = Extensions.GetCustomPin(PINTYPEWARD, pos, Minimap.instance.m_removeRadius * (Minimap.instance.m_largeZoom * 2f), Extensions.PinVisibility.Visible);
-            if (closestPin != null && _pins.TryGetValue(closestPin, out ZDO zdo))
-            {
-                ArcaneWardUI.Show(zdo);
-                Minimap.instance.SetMapMode(Minimap.MapMode.Small);
-                return false; 
-            }
-            return true;
+            if (closestPin == null || !_pins.TryGetValue(closestPin, out ZDO zdo)) return true;
+            ArcaneWardUI.Show(zdo);
+            Minimap.instance.SetMapMode(Minimap.MapMode.Small);
+            return false;
         }
     }
 }

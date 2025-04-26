@@ -40,6 +40,7 @@ Like my mods? Support me: `war3spells@gmail.com` (Paypal)
 
 | Version     | Changes                                                                                                                                                       |
 |-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0.6.2-0.6.4 | Fixed for new Valheim version. Removed Guilds API                                                                                                             |
 | 0.6.0-0.6.1 | Added Guild Ward option to Ward UI. Using Guilds mod API allows everyone from same guild gain access for Ward                                                 |
 | 0.5.2       | Added a fix to prevent building a ward near another ward if its non permitted                                                                                 |
 | 0.5.1       | Bugfixes                                                                                                                                                      |

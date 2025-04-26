@@ -70,6 +70,7 @@ public class ArcaneWardSettings : SettingsBase
     private GuiToggle _areaMarker;
     private GuiToggle _useShiftLeftClick;
     private GuiToggle _radiusOnMap;
+    private GuiToggle _showIconsOnMap;
     public override void LoadSettings()
     {
         _castShadows = this.transform.Find("List/CastShadows").GetComponent<GuiToggle>();
@@ -78,12 +79,14 @@ public class ArcaneWardSettings : SettingsBase
         _areaMarker = this.transform.Find("List/AreaMarker").GetComponent<GuiToggle>();
         _useShiftLeftClick = this.transform.Find("List/ShiftLeftClick").GetComponent<GuiToggle>();
         _radiusOnMap = this.transform.Find("List/RadiusOnMap").GetComponent<GuiToggle>();
+        _showIconsOnMap = this.transform.Find("List/ShowIconsOnMap").GetComponent<GuiToggle>();
         _castShadows.isOn = ArcaneWard.CastShadows.Value;
         _wardSound.isOn = ArcaneWard.WardSound.Value;
         _wardFlash.isOn = ArcaneWard.WardFlash.Value;
         _areaMarker.isOn = ArcaneWard.ShowAreaMarker.Value;
         _useShiftLeftClick.isOn = ArcaneWard.UseShiftLeftClick.Value;
         _radiusOnMap.isOn = ArcaneWard.RadiusOnMap.Value;
+        _showIconsOnMap.isOn = ArcaneWard.ShowIconsOnMap.Value;
     } 
 
     public override void SaveSettings() 
@@ -94,6 +97,7 @@ public class ArcaneWardSettings : SettingsBase
         ArcaneWard.ShowAreaMarker.Value = _areaMarker.isOn;
         ArcaneWard.UseShiftLeftClick.Value = _useShiftLeftClick.isOn;
         ArcaneWard.RadiusOnMap.Value = _radiusOnMap.isOn;
+        ArcaneWard.ShowIconsOnMap.Value = _showIconsOnMap.isOn;
         ArcaneWard._thistype.Config.Save();
         ArcaneWard.ApplyOptions(_castShadows.isOn, _wardSound.isOn);
         Saved();
