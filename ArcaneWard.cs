@@ -18,7 +18,7 @@ namespace kg_ArcaneWard
     {
         private const string GUID = "kg.ArcaneWard"; 
         private const string NAME = "Arcane Ward"; 
-        private const string VERSION = "0.6.5";
+        private const string VERSION = "0.6.6";
         
         private static readonly ConfigSync configSync = new ConfigSync(GUID)
             { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true};
@@ -62,21 +62,17 @@ namespace kg_ArcaneWard
         public static Sprite ArcaneWard_Radius_Icon;
         public static Sprite ArcaneWard_Radius_Icon_Disabled;
 
-        public static bool IsServer => SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
+        public static bool IsServer => SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null; 
         
         private void Awake()
         {
-            JSON.Parameters = new JSONParameters()
-            {
-                UseExtensions = false,
-            };
-            
+            JSON.Parameters = new JSONParameters { UseExtensions = false };
             Localizer.Load();
             _thistype = this;
             Asset = GetAssetBundle("kg_arcaneward");
-            ArcaneWard_Piece = Asset.LoadAsset<GameObject>("ArcaneWard");
+            ArcaneWard_Piece = Asset.LoadAsset<GameObject>("ArcaneWard"); 
             ArcaneWard_Piece.GetComponent<ZNetView>().m_distant = true;
-            ArcaneWard_Piece.AddComponent<ArcaneWardComponent>();
+            ArcaneWard_Piece.AddComponent<ArcaneWardComponent>(); 
             ArcaneWard_Icon = ArcaneWard_Piece.GetComponent<Piece>().m_icon;
             
             WardRecipe = config("General", "WardRecipe", "Iron:10:true,Wood:5:true", "The recipe for the Arcane Ward");

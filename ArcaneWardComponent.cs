@@ -38,6 +38,7 @@ public enum Protection : long
     [Extensions.ProtectionIcon("Carrot")] Pickables = 524288,
     [Extensions.ProtectionIcon("piece_cartographytable")] Map_Table = 1048576,
     [Extensions.ProtectionIcon("PickaxeIron")] Terrain_Modification = 2097152,
+    [Extensions.ProtectionIcon("Coins")] Item_Pickup = 4194304,
 }
 
 public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
@@ -53,13 +54,14 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public Piece _piece;
     private GameObject _vfx;
     private GameObject _bubble;
-    private Animator _animator; 
+    private Animator _animator;  
     private EffectArea _effectArea; 
     private CircleProjector _areaMarker;
  
     public static bool CheckFlag(Vector3 point, bool skipPermitted, Protection flag, bool flash = true)
     {
         if (ArcaneWard.DisabledProtection.Value.HasFlagFast(flag)) return false;
+        if (skipPermitted && Player.m_debugMode) return false;
         long id = Game.instance.m_playerProfile.m_playerID;
         for (int i = 0; i < _instances.Count; ++i)
         {
@@ -356,6 +358,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     private void FixedUpdate()
     {
         if (!_znet.IsValid() || !Player.m_localPlayer) return;
+        if (Player.m_debugMode) return;
         if (!IsInside(Player.m_localPlayer.transform.position, margin: 0.5f)) return;
         if (!IsEnabled || IsPermitted(Game.instance.m_playerProfile.m_playerID)) return;
         if (!Protection.HasFlagFast(Protection.Push_Players)) return;
@@ -476,6 +479,11 @@ public static class WardProtectionPatches
     private static class Pickable_Interact_Patch
     {
         private static bool Prefix(Pickable __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, true, Protection.Pickables);
+    }
+    [HarmonyPatch(typeof(ItemDrop),nameof(ItemDrop.Interact))]
+    private static class ItemDrop_Interact_Patch
+    {
+        private static bool Prefix(Pickable __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, true, Protection.Item_Pickup);
     }
     [HarmonyPatch(typeof(Attack),nameof(Attack.SpawnOnHitTerrain))]
     private static class Attack_SpawnOnHitTerrain_Patch
