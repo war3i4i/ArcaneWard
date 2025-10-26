@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using System.Text;
 using fastJSON;
 using HarmonyLib;
+using ServerSync;
 using Splatform;
 using UnityEngine;
 
@@ -57,13 +58,14 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     private Animator _animator;  
     private EffectArea _effectArea; 
     private CircleProjector _areaMarker;
+    private Transform _portal;
  
     public static bool CheckFlag(Vector3 point, bool skipPermitted, Protection flag, bool flash = true)
     {
         if (ArcaneWard.DisabledProtection.Value.HasFlagFast(flag)) return false;
         if (skipPermitted && Player.m_debugMode) return false;
         long id = Game.instance.m_playerProfile.m_playerID;
-        for (int i = 0; i < _instances.Count; ++i)
+        for (int i = 0; i < _instances.Count; ++i) 
         {
             ArcaneWardComponent ward = _instances[i];
             if (!ward.Protection.HasFlagFast(flag)) continue;
@@ -159,6 +161,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         _wardMaterials = transform.GetChild(3).GetComponentsInChildren<MeshRenderer>(true).Select(x => x.material).ToList();
         _cachedPermittedPlayers = _znet.m_zdo.GetPermittedPlayers();
         _areaMarker.gameObject.SetActive(false);
+        _portal = transform.Find("Portal");
         _bubble.GetComponent<MeshRenderer>().material.SetFloat(RefractionIntensity, BubbleFraction * 0.005f);
         _znet.Register<string>("RPC_ResetCache", ResetCache);
         _znet.Register<bool>("RPC_EnableSwitch", EnabledSwitch);
@@ -235,16 +238,14 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         _znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(owner), false]);
         ZRoutedRpc.instance.InvokeRoutedRPC("ArcaneWard Placed", [null]);
     }
-
+ 
     public string GetHoverText()
-    { 
+    {  
         if (!_znet.IsValid() || !Player.m_localPlayer) return "";
-        if (!IsPermitted(Game.instance.m_playerProfile.m_playerID) && !Player.m_debugMode)
-        {
-            return "$kg_cantviewarcaneward".Localize();  
-        }
-
-        StringBuilder stringBuilder = new StringBuilder(256); 
+        
+        if (!IsPermitted(Game.instance.m_playerProfile.m_playerID) && !Player.m_debugMode) return "$kg_cantviewarcaneward".Localize();  
+        if (Player.m_localPlayer.GetHoverObject() == _portal.gameObject) return "[<color=yellow><b>$KEY_Use</b></color>] $kg_arcaneward_portal".Localize();
+        StringBuilder stringBuilder = new StringBuilder(256);
         stringBuilder.Append($"Charge: <color=green>{((int)Fuel).ToTime()}</color> | <color=yellow>{ArcaneWard.WardMaxFuel.Value.ToTimeNoS()}</color>\n");
         var currenStatus = IsActivated ? "<color=green>$kg_arcaneward_activated</color>" : "<color=#FF0000>$kg_arcaneward_deactivated</color>";
         if (Fuel <= 0) currenStatus += " <color=red>($kg_arcaneward_nofuel)</color>";
@@ -288,6 +289,13 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     private int _cachedFraction;
     private void UpdateStatus()
     { 
+        if (ArcaneWard.EnableWardTeleport.Value)
+        {
+            bool anyPlayerNear = Player.GetAllPlayers().Any(p => Vector3.Distance(p.transform.position, transform.position) <= 5f);
+            _portal.gameObject.SetActive(anyPlayerNear);
+        } 
+        else _portal.gameObject.SetActive(false);
+        
         bool _enabled = IsEnabled;
         if (_enabled)
         {
@@ -341,6 +349,14 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public bool Interact(Humanoid user, bool hold, bool alt)
     {
         if (!IsPermitted(Player.m_localPlayer.GetPlayerID()) && !Player.m_debugMode) return false;
+        
+        if (Player.m_localPlayer.GetHoverObject() == _portal.gameObject)
+        {
+            ClientSide.Wards_MapControllerPatch.IsTeleporting = true;
+            Minimap.instance.SetMapMode(Minimap.MapMode.Large);
+            return true;
+        }
+        
         if (Input.GetKey(KeyCode.LeftShift))
         {
             ArcaneWardUI.Show(_znet.m_zdo);
@@ -349,14 +365,19 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         _znet.InvokeRPC("RPC_EnableSwitch", IsActivated);
         return true;
     }
-
+ 
     public bool UseItem(Humanoid user, ItemDrop.ItemData item)
     {
         return false;
     }
-
+ 
     private void FixedUpdate()
     {
+        if (_portal.gameObject.activeSelf && Player.m_localPlayer) 
+        {
+            Vector3 direction = (Player.m_localPlayer.transform.position + Vector3.up * 2f) - _portal.position;
+            if (direction != Vector3.zero) _portal.rotation = Quaternion.LookRotation(direction);
+        }
         if (!_znet.IsValid() || !Player.m_localPlayer) return;
         if (Player.m_debugMode) return;
         if (!IsInside(Player.m_localPlayer.transform.position, margin: 0.5f)) return;
@@ -435,7 +456,7 @@ public static class WardProtectionPatches
     private static class SapCollector_Interact_Patch
     {
         private static bool Prefix(SapCollector __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, true, Protection.Sap_Collector);
-    }
+    } 
     [HarmonyPatch(typeof(Sign),nameof(Sign.Interact))]
     private static class Sign_Interact_Patch
     {
@@ -449,7 +470,20 @@ public static class WardProtectionPatches
             yield return AccessTools.Method(typeof(TeleportWorld), nameof(TeleportWorld.Teleport));
         }
         private static bool Prefix(TeleportWorld __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, true, Protection.Portal);
+    } 
+    [HarmonyPatch(typeof(TeleportWorldTrigger),nameof(TeleportWorldTrigger.OnTriggerEnter))]
+    private static class TeleportWorldTrigger_OnTriggerEnter_Patch
+    {
+        private static void Prefix(TeleportWorldTrigger __instance, ref Collider colliderIn)
+        {
+            if (colliderIn.GetComponent<Player>() == Player.m_localPlayer)
+            {
+                bool blocked = ArcaneWardComponent.CheckFlag(colliderIn.transform.position, true, Protection.Portal);
+                if (blocked) colliderIn = __instance.GetComponent<Collider>();
+            }
+        }
     }
+  
     [HarmonyPatch(typeof(Trap),nameof(Trap.Interact))]
     private static class Trap_Interact_Patch
     {

@@ -4,6 +4,7 @@ using System.Linq;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.Rendering;
 
 namespace kg_ArcaneWard;
 
@@ -39,7 +40,7 @@ public static class ClientSide
             __result = false;
             return false;
         }
-    }
+    } 
     [HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
     private static class ZNetScene_Awake_Patch
     {
@@ -56,14 +57,15 @@ public static class ClientSide
         {
             MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, $"Something triggered <color=green>{wardName}</color>");
         }
-
+  
         private static void ReceiveData_ArcaneWard(long sender, bool can) => ArcaneWardComponent._canPlaceWard = can;
-    }
+    } 
     [HarmonyPatch(typeof(AudioMan), nameof(AudioMan.Awake))]
     private static class AudioMan_Awake_Patch
     {
         private static void Postfix(AudioMan __instance)
         {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
             AudioMixerGroup SFXgroup = __instance.m_masterMixer.FindMatchingGroups("SFX")[0];
             foreach (GameObject go in ArcaneWard.Asset.LoadAllAssets<GameObject>())
             {
@@ -73,8 +75,10 @@ public static class ClientSide
         }
     }
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.SetMapMode))]
-    private static class Wards_MapControllerPatch
+    public static class Wards_MapControllerPatch
     {
+       public static bool IsTeleporting;
+        
        private static void CreatePins()
         {
             foreach (KeyValuePair<Minimap.PinData, ZDO> pin in _pins) Minimap.instance.RemovePin(pin.Key);
@@ -97,7 +101,7 @@ public static class ClientSide
                     m_type = PINTYPEWARD, 
                     m_name = $"{colorName}{name}</color>",
                     m_pos = zdo.GetPosition(),
-                    m_icon = ArcaneWard.ArcaneWard_Icon,
+                    m_icon = Wards_MapControllerPatch.IsTeleporting ? ArcaneWard.ArcaneWard_TeleportIcon : ArcaneWard.ArcaneWard_Icon,
                     m_save = false,
                     m_checked = false,
                     m_ownerID = 0L
@@ -105,7 +109,7 @@ public static class ClientSide
                 if (!string.IsNullOrEmpty(wardPin.m_name)) wardPin.m_NamePinData = new Minimap.PinNameData(wardPin);
                 _pins.Add(wardPin, zdo);
 
-                if (ArcaneWard.RadiusOnMap.Value)
+                if (ArcaneWard.RadiusOnMap.Value && !Wards_MapControllerPatch.IsTeleporting)
                 {
                     Minimap.PinData radiusPin = new Minimap.PinData
                     {
@@ -125,32 +129,42 @@ public static class ClientSide
             foreach (Minimap.PinData pin in _radiusPins) Minimap.instance.m_pins.Add(pin);
             foreach (KeyValuePair<Minimap.PinData, ZDO> pin in _pins) Minimap.instance.m_pins.Add(pin.Key);
         }
+
         private static void Prefix(Minimap __instance, Minimap.MapMode mode)
         {
             if (mode != Minimap.MapMode.Large)
             {
+                Wards_MapControllerPatch.IsTeleporting = false;
                 foreach (Minimap.PinData pin in _radiusPins) __instance.RemovePin(pin);
                 foreach (KeyValuePair<Minimap.PinData, ZDO> pin in _pins) __instance.RemovePin(pin.Key);
                 _radiusPins.Clear();
                 _pins.Clear();
             }
+
             if (mode != Minimap.MapMode.Large) return;
-            if (ArcaneWard.ShowIconsOnMap.Value) CreatePins(); 
+            if (ArcaneWard.ShowIconsOnMap.Value || IsTeleporting) CreatePins(); 
         }
     }
-     
+    
     [HarmonyPatch(typeof(Minimap), nameof(Minimap.OnMapLeftClick))]
     private static class PatchClickIconMinimap
     {
         private static bool Prefix(bool __runOriginal)
         { 
-            if (!__runOriginal) return false; 
-            if (ArcaneWard.UseShiftLeftClick.Value && !Input.GetKey(KeyCode.LeftShift)) return true;
+            if (!__runOriginal) return false;
+            if (ArcaneWard.UseShiftLeftClick.Value && !Input.GetKey(KeyCode.LeftShift) && !Wards_MapControllerPatch.IsTeleporting) return true;
             Vector3 pos = Minimap.instance.ScreenToWorldPoint(Input.mousePosition);
             Minimap.PinData closestPin = Extensions.GetCustomPin(PINTYPEWARD, pos, Minimap.instance.m_removeRadius * (Minimap.instance.m_largeZoom * 2f), Extensions.PinVisibility.Visible);
             if (closestPin == null || !_pins.TryGetValue(closestPin, out ZDO zdo)) return true;
-            ArcaneWardUI.Show(zdo);
+            bool isTeleport = Wards_MapControllerPatch.IsTeleporting;
             Minimap.instance.SetMapMode(Minimap.MapMode.Small);
+            if (isTeleport)
+            {
+                var worldPos = zdo.GetPosition();
+                Player.m_localPlayer.TeleportTo(worldPos + Vector3.up * 2f, Player.m_localPlayer.transform.rotation, false);
+                return false;
+            }
+            ArcaneWardUI.Show(zdo);
             return false;
         }
     }

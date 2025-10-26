@@ -44,6 +44,7 @@ kg_arcaneward_protection_no_build_damage: No Build Damage
 kg_arcaneward_protection_pickables: Pickables
 kg_arcaneward_protection_crafting_stations: Crafting Stations
 kg_arcaneward_protection_terrain_modification: Terrain Modification
+kg_arcaneward_protection_item_pickup: Item Pickup
 kg_cantviewarcaneward: You can't view this Arcane Ward.
 kg_arcaneward_overview: Overview
 kg_arcaneward_protection: Protection
@@ -65,3 +66,4 @@ kg_arcaneward_shiftleftclick: Use Shift + Left Click to open UI
 kg_arcaneward_radiusonmap: Show Radius on Map
 kg_arcanewardinside: An Arcane Ward is already inside this area.
 kg_arcaneward_showiconsonmap: Show Icons on Map
+kg_arcaneward_portal: Open Teleporter

@@ -42,8 +42,9 @@ public static class ArcaneWardUI
 
     public static AssetBundle Asset;
     public static void Init()
-    {
+    { 
         Asset = ArcaneWard.GetAssetBundle("kg_arcanewardui");
+        ArcaneWard.ArcaneWard_TeleportIcon = Asset.LoadAsset<Sprite>("arcaneward_teleportmapicon");
         ArcaneWard.ArcaneWard_Radius_Icon = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img");
         ArcaneWard.ArcaneWard_Radius_Icon_Disabled = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img_Disabled");
         UI = Object.Instantiate(Asset.LoadAsset<GameObject>("ArcaneWardUI"));

@@ -255,7 +255,7 @@ public class ConfigSync
 	internal static class RegisterRPCPatch
 	{
 		[HarmonyPostfix]
-		private static void Postfix(ZNet __instance)
+		private static void Postfix(ZNet __instance) 
 		{
 			isServer = __instance.IsServer();
 			foreach (ConfigSync configSync in configSyncs)
