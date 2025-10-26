@@ -369,9 +369,9 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     public bool UseItem(Humanoid user, ItemDrop.ItemData item)
     {
         return false;
-    }
- 
-    private void FixedUpdate()
+    } 
+   
+    private void FixedUpdate() 
     {
         if (_portal.gameObject.activeSelf && Player.m_localPlayer) 
         {

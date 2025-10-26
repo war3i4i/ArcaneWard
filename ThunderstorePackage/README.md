@@ -38,18 +38,19 @@ Like my mods? Support me: `war3spells@gmail.com` (Paypal)
     Patchnotes
 </span></b></summary>
 
-| Version     | Changes                                                                                                                                                            |
-|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 0.6.5       | Added new setting to remove Arcane Ward icons from map<br/>Added more special symbols to Norse Font in UI<br/>Added new protection: Terrain Modification (pickaxe) |
-| 0.6.2-0.6.4 | Fixed for new Valheim version. Removed Guilds API                                                                                                                  |
-| 0.6.0-0.6.1 | Added Guild Ward option to Ward UI. Using Guilds mod API allows everyone from same guild gain access for Ward                                                      |
-| 0.5.2       | Added a fix to prevent building a ward near another ward if its non permitted                                                                                      |
-| 0.5.1       | Bugfixes                                                                                                                                                           |
-| 0.5.0       | Fixed Localization file not being applied<br/>Fixed compatibility with TargetPortal                                                                                |
-| 0.4.0       | Holding Left Shift while adding fuel will now use 5 items instead of 1. If you're in debug mode (admin) you will see all wards on map so you can disable them      |
-| 0.3.0       | Bugfixes. Added more clientside settings                                                                                                                           |
-| 0.2.0       | Bubble can now block projectiles from outside                                                                                                                      |
-| 0.1.0       | Test Mod released                                                                                                                                                  |
+| Version     | Changes                                                                                                                                                                             |
+|-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0.6.5       | Added an ability to teleport between wards (Can be activated / deactivated in synced config)<br/>To teleport interact with portal on top of a ward, then click on other ward on map |
+| 0.6.5       | Added new setting to remove Arcane Ward icons from map<br/>Added more special symbols to Norse Font in UI<br/>Added new protection: Terrain Modification (pickaxe)                  |
+| 0.6.2-0.6.4 | Fixed for new Valheim version. Removed Guilds API                                                                                                                                   |
+| 0.6.0-0.6.1 | Added Guild Ward option to Ward UI. Using Guilds mod API allows everyone from same guild gain access for Ward                                                                       |
+| 0.5.2       | Added a fix to prevent building a ward near another ward if its non permitted                                                                                                       |
+| 0.5.1       | Bugfixes                                                                                                                                                                            |
+| 0.5.0       | Fixed Localization file not being applied<br/>Fixed compatibility with TargetPortal                                                                                                 |
+| 0.4.0       | Holding Left Shift while adding fuel will now use 5 items instead of 1. If you're in debug mode (admin) you will see all wards on map so you can disable them                       |
+| 0.3.0       | Bugfixes. Added more clientside settings                                                                                                                                            |
+| 0.2.0       | Bubble can now block projectiles from outside                                                                                                                                       |
+| 0.1.0       | Test Mod released                                                                                                                                                                   |
 </details>
 
 
