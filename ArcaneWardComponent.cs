@@ -370,15 +370,15 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     {
         return false;
     } 
-   
+    
     private void FixedUpdate() 
     {
-        if (_portal.gameObject.activeSelf && Player.m_localPlayer) 
+        if (!_znet.IsValid() || !Player.m_localPlayer) return;
+        if (_portal.gameObject.activeSelf) 
         {
             Vector3 direction = (Player.m_localPlayer.transform.position + Vector3.up * 2f) - _portal.position;
             if (direction != Vector3.zero) _portal.rotation = Quaternion.LookRotation(direction);
         }
-        if (!_znet.IsValid() || !Player.m_localPlayer) return;
         if (Player.m_debugMode) return;
         if (!IsInside(Player.m_localPlayer.transform.position, margin: 0.5f)) return;
         if (!IsEnabled || IsPermitted(Game.instance.m_playerProfile.m_playerID)) return;

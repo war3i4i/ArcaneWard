@@ -83,7 +83,7 @@ public static class ClientSide
         {
             foreach (KeyValuePair<Minimap.PinData, ZDO> pin in _pins) Minimap.instance.RemovePin(pin.Key);
             _pins.Clear();
-            List<ZDO> AllWards = [];  
+            List<ZDO> AllWards = [];
             int index = 0;
             while (!ZDOMan.instance.GetAllZDOsWithPrefabIterative(ServerSide.toSearch, AllWards, ref index)) { }
             if (!Player.m_debugMode) AllWards.RemoveAll(zdo => !zdo.GetPermittedPlayersHashset().Contains(Player.m_localPlayer.GetPlayerID()));
