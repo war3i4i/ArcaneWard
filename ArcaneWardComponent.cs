@@ -370,7 +370,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     {
         return false;
     } 
-    
+     
     private void FixedUpdate() 
     {
         if (!_znet.IsValid() || !Player.m_localPlayer) return;
