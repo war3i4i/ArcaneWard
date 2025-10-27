@@ -40,6 +40,7 @@ Like my mods? Support me: `war3spells@gmail.com` (Paypal)
 
 | Version     | Changes                                                                                                                                                                             |
 |-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0.6.8       | Added new config option to prevent players from teleporting with non-teleportable items</br>Resduced visual size of portal on top of a ward                                         |
 | 0.6.7       | Fixed red error happening on hovering ward in Hammer                                                                                                                                |
 | 0.6.6       | Added an ability to teleport between wards (Can be activated / deactivated in synced config)<br/>To teleport interact with portal on top of a ward, then click on other ward on map |
 | 0.6.5       | Added new setting to remove Arcane Ward icons from map<br/>Added more special symbols to Norse Font in UI<br/>Added new protection: Terrain Modification (pickaxe)                  |

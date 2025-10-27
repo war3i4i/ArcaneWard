@@ -367,7 +367,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
     }
  
     public bool UseItem(Humanoid user, ItemDrop.ItemData item)
-    {
+    { 
         return false;
     } 
      

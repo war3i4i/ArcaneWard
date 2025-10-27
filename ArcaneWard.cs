@@ -19,7 +19,7 @@ namespace kg_ArcaneWard
     {
         private const string GUID = "kg.ArcaneWard";
         private const string NAME = "Arcane Ward";
-        private const string VERSION = "0.6.7";
+        private const string VERSION = "0.6.8";
 
         private static readonly ConfigSync configSync = new ConfigSync(GUID)
             { DisplayName = NAME, CurrentVersion = VERSION, MinimumRequiredVersion = VERSION, IsLocked = true, ModRequired = true };
@@ -30,6 +30,7 @@ namespace kg_ArcaneWard
         public static ConfigEntry<int> WardMinRadius;
         public static ConfigEntry<int> WardMaxRadius;
         public static ConfigEntry<bool> EnableWardTeleport;
+        public static ConfigEntry<bool> AllowTeleportWithOre;
         public static ConfigEntry<int> WardMaxDistanceToFuel;
         public static ConfigEntry<string> WardFuelPrefabs;
         public static ConfigEntry<int> WardMaxFuel;
@@ -71,7 +72,7 @@ namespace kg_ArcaneWard
         {
             JSON.Parameters = new JSONParameters { UseExtensions = false };
             Localizer.Load();
-            _thistype = this;
+            _thistype = this; 
             Asset = GetAssetBundle("kg_arcaneward");
             ArcaneWard_Piece = Asset.LoadAsset<GameObject>("ArcaneWard");
             ArcaneWard_Piece.GetComponent<ZNetView>().m_distant = true;
@@ -89,6 +90,7 @@ namespace kg_ArcaneWard
             DisabledProtection = config("General", "DisabledProtection", Protection.None, "List of disabled Protection flags");
             WardBlockProjectiles = config("General", "WardBlockProjectiles", true, "Whether the Arcane Ward should block projectiles");
             EnableWardTeleport = config("General", "EnableWardTeleport", true, "Whether the Arcane Ward should allow teleporting to it");
+            AllowTeleportWithOre = config("General", "AllowTeleportWithOre", false, "Whether the Arcane Ward should allow teleporting when non-teleportable items are in inventory");
 
             CastShadows = Config.Bind("Visuals", "CastShadows", true, "Whether the Arcane Ward Bubble should cast shadows");
             WardSound = Config.Bind("Visuals", "WardSound", true, "Whether the Arcane Ward should play a sound when activated");

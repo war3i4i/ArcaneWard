@@ -159,7 +159,12 @@ public static class ClientSide
             bool isTeleport = Wards_MapControllerPatch.IsTeleporting;
             Minimap.instance.SetMapMode(Minimap.MapMode.Small);
             if (isTeleport)
-            {
+            { 
+                if (!Player.m_localPlayer.IsTeleportable() && !ArcaneWard.AllowTeleportWithOre.Value && !Player.m_debugMode)
+                {
+                    MessageHud.instance.ShowMessage(MessageHud.MessageType.Center, "<color=red>$msg_noteleport</color>");
+                    return false;
+                } 
                 var worldPos = zdo.GetPosition();
                 Player.m_localPlayer.TeleportTo(worldPos + Vector3.up * 2f, Player.m_localPlayer.transform.rotation, false);
                 return false;
