@@ -1,4 +1,5 @@
-﻿using GUIFramework;
+﻿using System;
+using GUIFramework;
 using HarmonyLib;
 using JetBrains.Annotations;
 using TMPro;
@@ -6,6 +7,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
 using Valheim.SettingsGui;
+using Object = UnityEngine.Object;
 
 namespace kg_ArcaneWard;
 
@@ -13,7 +15,7 @@ namespace kg_ArcaneWard;
     static class Menu_Start_Patch
     {
         private static bool firstInit = true; 
- 
+        
         [UsedImplicitly]
         private static void Postfix(FejdStartup __instance)
         {

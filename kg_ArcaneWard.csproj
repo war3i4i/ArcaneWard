@@ -57,6 +57,9 @@
         <Reference Include="gui_framework">
           <HintPath>Libs\gui_framework.dll</HintPath>
         </Reference>
+        <Reference Include="kg_AsyncModLoader">
+          <HintPath>..\AsyncModLoader\AsyncModLoader\bin\Debug\kg_AsyncModLoader.dll</HintPath>
+        </Reference>
         <Reference Include="Mono.Cecil">
           <HintPath>Libs\Mono.Cecil.dll</HintPath>
         </Reference>

@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+using AsyncModLoader;
 using BepInEx;
 using BepInEx.Configuration;
 using fastJSON;
@@ -14,7 +17,8 @@ using UnityEngine.Rendering;
 
 namespace kg_ArcaneWard
 {
-    [BepInPlugin(GUID, NAME, VERSION)]
+    [BepInPlugin(GUID, NAME, VERSION)] 
+    [BepInDependency("kg.AsyncModLoader", BepInDependency.DependencyFlags.HardDependency)]
     public class ArcaneWard : BaseUnityPlugin
     {
         private const string GUID = "kg.ArcaneWard";
@@ -51,12 +55,14 @@ namespace kg_ArcaneWard
         public static GameObject FlashShield_Activate;
         public static GameObject FlashShield_Deactivate;
 
-        public static AssetBundle GetAssetBundle(string filename)
+        public static IEnumerator GetAssetBundle(string filename, Action<AssetBundle> onComplete)
         {
             Assembly execAssembly = Assembly.GetExecutingAssembly();
             string resourceName = execAssembly.GetManifestResourceNames().Single(str => str.EndsWith(filename));
             using Stream stream = execAssembly.GetManifestResourceStream(resourceName)!;
-            return AssetBundle.LoadFromStream(stream);
+            var request = AssetBundle.LoadFromStreamAsync(stream);
+            yield return request;
+            onComplete?.Invoke(request.assetBundle);
         }
 
         public static AssetBundle Asset;
@@ -65,15 +71,16 @@ namespace kg_ArcaneWard
         public static Sprite ArcaneWard_TeleportIcon;
         public static Sprite ArcaneWard_Radius_Icon;
         public static Sprite ArcaneWard_Radius_Icon_Disabled;
+        
+        private void Awake() => StartCoroutine(AsyncAwake());
 
-        public static bool IsServer => SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
-
-        private void Awake()
+        private IEnumerator AsyncAwake()
         {
+            this.AsyncModLoaderInit();
             JSON.Parameters = new JSONParameters { UseExtensions = false };
             Localizer.Load();
             _thistype = this; 
-            Asset = GetAssetBundle("kg_arcaneward");
+            yield return GetAssetBundle("kg_arcaneward", assetBundle => Asset = assetBundle);
             ArcaneWard_Piece = Asset.LoadAsset<GameObject>("ArcaneWard");
             ArcaneWard_Piece.GetComponent<ZNetView>().m_distant = true;
             ArcaneWard_Piece.AddComponent<ArcaneWardComponent>();
@@ -99,18 +106,14 @@ namespace kg_ArcaneWard
             UseShiftLeftClick = Config.Bind("General", "UseShiftLeftClick", false, "Whether the Arcane Ward should use Shift + Left Click to open UI from map or just Left Click");
             RadiusOnMap = Config.Bind("General", "RadiusOnMap", true, "Whether the Arcane Ward should show its radius on the map");
             ShowIconsOnMap = config("General", "ShowIconsOnMap", true, "Whether the Arcane Ward should show its icon on the map");
-
+   
             ApplyOptions(CastShadows.Value, WardSound.Value);
-            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null)
-            {
-                ArcaneWardUI.Init();
-            }
-
-            ServerSide.ServerSideInit();
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null) yield return ArcaneWardUI.Init();
+            ServerSide.ServerSideInit(); 
             new Harmony(GUID).PatchAll();
+            this.AsyncModLoaderDone();
         }
         
-
         public static void ApplyOptions(bool castShadows, bool wardSound)
         {
             ArcaneWard_Piece.transform.Find("Bubble").GetComponent<MeshRenderer>().shadowCastingMode = castShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;

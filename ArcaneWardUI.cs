@@ -37,13 +37,13 @@ public static class ArcaneWardUI
 
     private static string EnabledLocalized;
     private static string DisabledLocalized;
-    
+     
     private static Dictionary<Protection, Sprite> ProtectionIcons;
 
     public static AssetBundle Asset;
-    public static void Init()
+    public static IEnumerator Init()
     { 
-        Asset = ArcaneWard.GetAssetBundle("kg_arcanewardui");
+        yield return ArcaneWard.GetAssetBundle("kg_arcanewardui", bundle => Asset = bundle);
         ArcaneWard.ArcaneWard_TeleportIcon = Asset.LoadAsset<Sprite>("arcaneward_teleportmapicon");
         ArcaneWard.ArcaneWard_Radius_Icon = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img");
         ArcaneWard.ArcaneWard_Radius_Icon_Disabled = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img_Disabled");
