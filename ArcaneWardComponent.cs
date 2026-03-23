@@ -539,7 +539,7 @@ public static class WardProtectionPatches
                 __result = false;
             }
         }
-    }
+    } 
     [HarmonyPatch(typeof(CraftingStation),nameof(CraftingStation.Interact))]
     private static class CraftingStation_Interact_Patch
     {
@@ -550,7 +550,7 @@ public static class WardProtectionPatches
     {
         private static bool Prefix(Character __instance)
         {
-            if (!__instance.m_tameable || !__instance.IsTamed()) return true;
+            if (!__instance.m_tamed) return true;
             return !ArcaneWardComponent.CheckFlag(__instance.transform.position, false, Protection.Tameable_Damage);
         }
     }
