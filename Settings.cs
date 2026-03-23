@@ -54,18 +54,8 @@ namespace kg_ArcaneWard;
         }
     }
 
-public class ArcaneWardSettings : SettingsBase
+public class ArcaneWardSettings : MonoBehaviour, ISettingsTab
 {
-    public override void FixBackButtonNavigation(Button backButton)
-    {
-        
-    }
-
-    public override void FixOkButtonNavigation(Button okButton)
-    {
-        
-    }
-
     private GuiToggle _castShadows;
     private GuiToggle _wardSound;
     private GuiToggle _wardFlash;
@@ -73,7 +63,9 @@ public class ArcaneWardSettings : SettingsBase
     private GuiToggle _useShiftLeftClick;
     private GuiToggle _radiusOnMap;
     private GuiToggle _showIconsOnMap;
-    public override void LoadSettings()
+    
+
+    public void Initialize()
     {
         _castShadows = this.transform.Find("List/CastShadows").GetComponent<GuiToggle>();
         _wardSound = this.transform.Find("List/WardSound").GetComponent<GuiToggle>();
@@ -89,10 +81,22 @@ public class ArcaneWardSettings : SettingsBase
         _useShiftLeftClick.isOn = ArcaneWard.UseShiftLeftClick.Value;
         _radiusOnMap.isOn = ArcaneWard.RadiusOnMap.Value;
         _showIconsOnMap.isOn = ArcaneWard.ShowIconsOnMap.Value;
-    } 
+    }
 
-    public override void SaveSettings() 
-    { 
+    public void Terminate()
+    {
+        
+    }
+
+    public void OnTabOpen(Button backButton, Button okButton)
+    {
+        GuiUtils.SetNavigationDown(_castShadows, backButton);
+        GuiUtils.SetNavigationUp(backButton, _showIconsOnMap);
+        GuiUtils.SetNavigationUp(okButton, _showIconsOnMap);
+    }
+
+    public void OnOkAsync(OkActionCompletedHandler okActionCompletedCallback)
+    {
         ArcaneWard.CastShadows.Value = _castShadows.isOn; 
         ArcaneWard.WardSound.Value = _wardSound.isOn;
         ArcaneWard.WardFlash.Value = _wardFlash.isOn;
@@ -102,6 +106,24 @@ public class ArcaneWardSettings : SettingsBase
         ArcaneWard.ShowIconsOnMap.Value = _showIconsOnMap.isOn;
         ArcaneWard._thistype.Config.Save();
         ArcaneWard.ApplyOptions(_castShadows.isOn, _wardSound.isOn);
-        Saved();
+        okActionCompletedCallback();
+    } 
+
+    public void OnBack()
+    {
+        _castShadows.isOn = ArcaneWard.CastShadows.Value;
+        _wardSound.isOn = ArcaneWard.WardSound.Value;
+        _wardFlash.isOn = ArcaneWard.WardFlash.Value;
+        _areaMarker.isOn = ArcaneWard.ShowAreaMarker.Value;
+        _useShiftLeftClick.isOn = ArcaneWard.UseShiftLeftClick.Value;
+        _radiusOnMap.isOn = ArcaneWard.RadiusOnMap.Value;
+        _showIconsOnMap.isOn = ArcaneWard.ShowIconsOnMap.Value;
     }
+
+    public void OnSharedSettingChanged(string setting, int value)
+    {
+        
+    }
+
+    public event Action<string, int> SharedSettingChanged;
 }

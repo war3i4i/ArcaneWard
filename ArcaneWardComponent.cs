@@ -12,36 +12,35 @@ using Splatform;
 using UnityEngine;
 
 namespace kg_ArcaneWard;
-
 [Flags]
 public enum Protection : long
 {
     None = 0,
-    [Extensions.ProtectionIcon("ArmorStand")] Armor_Stand = 1,
-    [Extensions.ProtectionIcon("piece_beehive")] Beehive = 2,
-    [Extensions.ProtectionIcon("piece_chest_wood")] Container = 4,
-    [Extensions.ProtectionIcon("wood_door")] Door = 8,
-    [Extensions.ProtectionIcon("fermenter")] Fermenter = 16,
-    [Extensions.ProtectionIcon("incinerator")] Incinerator = 32,
-    [Extensions.ProtectionIcon("itemstand")] Item_Stand = 64,
-    [Extensions.ProtectionIcon("piece_workbench")] Crafting_Stations = 128,
-    [Extensions.ProtectionIcon("Hammer")] Build_Piece = 256,
-    [Extensions.ProtectionIcon("Hammer")] Destroy_Piece = 512,
-    [Extensions.ProtectionIcon("piece_sapcollector")] Sap_Collector = 1024,
-    [Extensions.ProtectionIcon("sign")] Sign = 2048,
-    [Extensions.ProtectionIcon("portal_stone")] Portal = 4096,
-    [Extensions.ProtectionIcon("piece_trap_troll")] Trap = 8192,
-    [Extensions.ProtectionIcon("Ruby")] Pickup_Item = 16384,
-    [Extensions.ProtectionIcon("Ruby")] Drop_Item = 32768,
-    [Extensions.ProtectionIcon("VikingShip")] Ship = 65536,
-    [Extensions.ProtectionIcon("GreydwarfEye")] Push_Players = 131072,
-    [Extensions.ProtectionIcon("SledgeDemolisher")] No_Build_Damage = 262144,
-    [Extensions.ProtectionIcon("Carrot")] Pickables = 524288,
-    [Extensions.ProtectionIcon("piece_cartographytable")] Map_Table = 1048576,
-    [Extensions.ProtectionIcon("PickaxeIron")] Terrain_Modification = 2097152,
-    [Extensions.ProtectionIcon("Coins")] Item_Pickup = 4194304,
+    [Extensions.ProtectionIcon("ArmorStand")] Armor_Stand = 1 << 0,
+    [Extensions.ProtectionIcon("piece_beehive")] Beehive = 1 << 1,
+    [Extensions.ProtectionIcon("piece_chest_wood")] Container = 1 << 2,
+    [Extensions.ProtectionIcon("wood_door")] Door = 1 << 3,
+    [Extensions.ProtectionIcon("fermenter")] Fermenter = 1 << 4,
+    [Extensions.ProtectionIcon("incinerator")] Incinerator = 1 << 5,
+    [Extensions.ProtectionIcon("itemstand")] Item_Stand = 1 << 6,
+    [Extensions.ProtectionIcon("piece_workbench")] Crafting_Stations = 1 << 7,
+    [Extensions.ProtectionIcon("Hammer")] Build_Piece = 1 << 8,
+    [Extensions.ProtectionIcon("Hammer")] Destroy_Piece = 1 << 9,
+    [Extensions.ProtectionIcon("piece_sapcollector")] Sap_Collector = 1 << 10,
+    [Extensions.ProtectionIcon("sign")] Sign = 1 << 11,
+    [Extensions.ProtectionIcon("portal_stone")] Portal = 1 << 12,
+    [Extensions.ProtectionIcon("piece_trap_troll")] Trap = 1 << 13,
+    [Extensions.ProtectionIcon("Ruby")] Pickup_Item = 1 << 14,
+    [Extensions.ProtectionIcon("Ruby")] Drop_Item = 1 << 15,
+    [Extensions.ProtectionIcon("VikingShip")] Ship = 1 << 16,
+    [Extensions.ProtectionIcon("GreydwarfEye")] Push_Players = 1 << 17,
+    [Extensions.ProtectionIcon("SledgeDemolisher")] No_Build_Damage = 1 << 18,
+    [Extensions.ProtectionIcon("Carrot")] Pickables = 1 << 19,
+    [Extensions.ProtectionIcon("piece_cartographytable")] Map_Table = 1 << 20,
+    [Extensions.ProtectionIcon("PickaxeIron")] Terrain_Modification = 1 << 21,
+    [Extensions.ProtectionIcon("Coins")] Item_Pickup = 1 << 22,
+    [Extensions.ProtectionIcon("VoltureEgg")] Tameable_Damage = 1 << 23,
 }
-
 public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
 {
     public static bool _canPlaceWard;
@@ -200,6 +199,7 @@ public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
         Radius = radius;
         BubbleFraction = fraction;
         Protection = protection;
+        
         _znet.m_zdo.SetPermittedPlayers(permittedPlayers);
         _znet.InvokeRPC(ZNetView.Everybody, "RPC_ResetCache", [JSON.ToJSON(permittedPlayers)]);
     }
@@ -538,6 +538,20 @@ public static class WardProtectionPatches
             {
                 __result = false;
             }
+        }
+    }
+    [HarmonyPatch(typeof(CraftingStation),nameof(CraftingStation.Interact))]
+    private static class CraftingStation_Interact_Patch
+    {
+        private static bool Prefix(CraftingStation __instance) => !ArcaneWardComponent.CheckFlag(__instance.transform.position, true, Protection.Crafting_Stations);
+    }
+    [HarmonyPatch(typeof(Character),nameof(Character.Damage))]
+    private static class Character_Damage_Patch
+    {
+        private static bool Prefix(Character __instance)
+        {
+            if (!__instance.m_tameable || !__instance.IsTamed()) return true;
+            return !ArcaneWardComponent.CheckFlag(__instance.transform.position, false, Protection.Tameable_Damage);
         }
     }
     [HarmonyPatch(typeof(ShieldGenerator),nameof(ShieldGenerator.CheckProjectile))]

@@ -7,7 +7,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using BepInEx;
@@ -29,15 +28,10 @@ public abstract class OwnConfigEntryBase
 }
 
 [PublicAPI]
-public class SyncedConfigEntry<T> : OwnConfigEntryBase
+public class SyncedConfigEntry<T>(ConfigEntry<T> sourceConfig) : OwnConfigEntryBase
 {
 	public override ConfigEntryBase BaseConfig => SourceConfig;
-	public readonly ConfigEntry<T> SourceConfig;
-
-	public SyncedConfigEntry(ConfigEntry<T> sourceConfig)
-	{
-		SourceConfig = sourceConfig;
-	}
+	public readonly ConfigEntry<T> SourceConfig = sourceConfig;
 
 	public T Value
 	{
@@ -60,7 +54,9 @@ public class SyncedConfigEntry<T> : OwnConfigEntryBase
 
 public abstract class CustomSyncedValueBase
 {
-	public Action? ValueChanged;
+	public event Action? ValueChanged;
+	
+	public void Update() => ValueChanged?.Invoke();
 
 	public object? LocalBaseValue;
 
@@ -102,7 +98,7 @@ public sealed class CustomSyncedValue<T> : CustomSyncedValueBase
 		set => BoxedValue = value;
 	}
 
-	public void Update() => ValueChanged?.Invoke();
+	
 
 	public CustomSyncedValue(ConfigSync configSync, string identifier, T value = default!, int priority = 0) : base(configSync, identifier, typeof(T), priority)
 	{
@@ -240,7 +236,6 @@ public class ConfigSync
 			}
 		};
 	}
-	
 
 	[HarmonyPatch(typeof(ZRpc), "HandlePackage")]
 	private static class SnatchCurrentlyHandlingRPC
@@ -255,7 +250,7 @@ public class ConfigSync
 	internal static class RegisterRPCPatch
 	{
 		[HarmonyPostfix]
-		private static void Postfix(ZNet __instance) 
+		private static void Postfix(ZNet __instance)
 		{
 			isServer = __instance.IsServer();
 			foreach (ConfigSync configSync in configSyncs)
@@ -448,6 +443,7 @@ public class ConfigSync
 			if (configFile is not null)
 			{
 				configFile.SaveOnConfigSet = originalSaveOnConfigSet;
+				configFile.Save();
 			}
 
 			foreach (KeyValuePair<CustomSyncedValueBase, object?> configKv in configs.customValues)
@@ -617,7 +613,7 @@ public class ConfigSync
 		{
 			configFile.SaveOnConfigSet = originalSaveOnConfigSet;
 		}
-		
+
 		foreach (CustomSyncedValueBase config in allCustomValues.Where(config => config.LocalBaseValue != null))
 		{
 			config.BoxedValue = config.LocalBaseValue;
@@ -637,7 +633,7 @@ public class ConfigSync
 			yield break;
 		}
 
-		const int packageSliceSize = 250000;
+		const int packageSliceSize = 40000;
 		const int maximumSendQueueSize = 20000;
 
 		IEnumerable<bool> waitForQueue()
@@ -670,34 +666,35 @@ public class ConfigSync
 			}
 		}
 
-		if (package.GetArray() is { LongLength: > packageSliceSize } data)
+		if (package.Size() > packageSliceSize)
 		{
-			int fragments = (int)(1 + (data.LongLength - 1) / packageSliceSize);
+			if (!package.m_stream.TryGetBuffer(out var seg))
+			{
+				var arr = package.m_stream.ToArray();
+				seg = new ArraySegment<byte>(arr, 0, arr.Length);
+			}
+
+			int len = seg.Count;
+			int fragments = (len + packageSliceSize - 1) / packageSliceSize;
 			long packageIdentifier = ++packageCounter;
+			
 			for (int fragment = 0; fragment < fragments; ++fragment)
 			{
-				foreach (bool wait in waitForQueue())
-				{
-					yield return wait;
-				}
+				foreach (bool wait in waitForQueue()) yield return wait;
+				if (!peer.m_socket.IsConnected()) yield break;
 
-				if (!peer.m_socket.IsConnected())
-				{
-					yield break;
-				}
-
-				ZPackage fragmentedPackage = new();
+				int offset = fragment * packageSliceSize;
+				int count  = Math.Min(packageSliceSize, len - offset);
+ 
+				var fragmentedPackage = new ZPackage();
 				fragmentedPackage.Write(FRAGMENTED_CONFIG);
 				fragmentedPackage.Write(packageIdentifier);
 				fragmentedPackage.Write(fragment);
 				fragmentedPackage.Write(fragments);
-				fragmentedPackage.Write(data.Skip(packageSliceSize * fragment).Take(packageSliceSize).ToArray());
+				fragmentedPackage.m_stream.Write(seg.Array, seg.Offset + offset, count);
 				SendPackage(fragmentedPackage);
 
-				if (fragment != fragments - 1)
-				{
-					yield return true;
-				}
+				if (fragment != fragments - 1) yield return true;
 			}
 		}
 		else
@@ -736,16 +733,12 @@ public class ConfigSync
 
 		const int compressMinSize = 10000;
 
-		if (package.GetArray() is { LongLength: > compressMinSize } rawData)
+		if (package.Size() > compressMinSize)
 		{
-			ZPackage compressedPackage = new();
+			var compressedPackage = new ZPackage();
 			compressedPackage.Write(COMPRESSED_CONFIG);
-			MemoryStream output = new();
-			using (DeflateStream deflateStream = new(output, CompressionLevel.Optimal))
-			{
-				deflateStream.Write(rawData, 0, rawData.Length);
-			}
-			compressedPackage.Write(output.ToArray());
+			package.m_stream.Position = 0;
+			using (var deflate = new DeflateStream(compressedPackage.m_stream, CompressionLevel.Optimal, leaveOpen: true)) package.m_stream.CopyTo(deflate);
 			package = compressedPackage;
 		}
 
@@ -756,40 +749,35 @@ public class ConfigSync
 			yield return null;
 			writers.RemoveAll(writer => !writer.MoveNext());
 		}
-	}
+	} 
 
 	[HarmonyPatch(typeof(ZNet), "RPC_PeerInfo")]
 	private class SendConfigsAfterLogin
 	{
-		private class BufferingSocket : ISocket
+		private class BufferingSocket(ISocket original) : ZPlayFabSocket, ISocket
 		{
 			public volatile bool finished = false;
 			public volatile int versionMatchQueued = -1;
 			public readonly List<ZPackage> Package = new();
-			public readonly ISocket Original;
+			public readonly ISocket Original = original;
 
-			public BufferingSocket(ISocket original)
-			{
-				Original = original;
-			}
+			public new bool IsConnected() => Original.IsConnected();
+			public new ZPackage Recv() => Original.Recv();
+			public new int GetSendQueueSize() => Original.GetSendQueueSize();
+			public new int GetCurrentSendRate() => Original.GetCurrentSendRate();
+			public new bool IsHost() => Original.IsHost();
+			public new void Dispose() => Original.Dispose();
+			public new bool GotNewData() => Original.GotNewData();
+			public new void Close() => Original.Close();
+			public new string GetEndPointString() => Original.GetEndPointString();
+			public new void GetAndResetStats(out int totalSent, out int totalRecv) => Original.GetAndResetStats(out totalSent, out totalRecv);
+			public new void GetConnectionQuality(out float localQuality, out float remoteQuality, out int ping, out float outByteSec, out float inByteSec) => Original.GetConnectionQuality(out localQuality, out remoteQuality, out ping, out outByteSec, out inByteSec);
+			public new ISocket Accept() => Original.Accept();
+			public new int GetHostPort() => Original.GetHostPort();
+			public new bool Flush() => Original.Flush();
+			public new string GetHostName() => Original.GetHostName();
 
-			public bool IsConnected() => Original.IsConnected();
-			public ZPackage Recv() => Original.Recv();
-			public int GetSendQueueSize() => Original.GetSendQueueSize();
-			public int GetCurrentSendRate() => Original.GetCurrentSendRate();
-			public bool IsHost() => Original.IsHost();
-			public void Dispose() => Original.Dispose();
-			public bool GotNewData() => Original.GotNewData();
-			public void Close() => Original.Close();
-			public string GetEndPointString() => Original.GetEndPointString();
-			public void GetAndResetStats(out int totalSent, out int totalRecv) => Original.GetAndResetStats(out totalSent, out totalRecv);
-			public void GetConnectionQuality(out float localQuality, out float remoteQuality, out int ping, out float outByteSec, out float inByteSec) => Original.GetConnectionQuality(out localQuality, out remoteQuality, out ping, out outByteSec, out inByteSec);
-			public ISocket Accept() => Original.Accept();
-			public int GetHostPort() => Original.GetHostPort();
-			public bool Flush() => Original.Flush();
-			public string GetHostName() => Original.GetHostName();
-
-			public void VersionMatch()
+			public new void VersionMatch()
 			{
 				if (finished)
 				{
@@ -801,7 +789,7 @@ public class ConfigSync
 				}
 			}
 
-			public void Send(ZPackage pkg)
+			public new void Send(ZPackage pkg)
 			{
 				int oldPos = pkg.GetPos();
 				pkg.SetPos(0);
@@ -831,36 +819,17 @@ public class ConfigSync
 				// Don't replace on steam sockets, RPC_PeerInfo does peer.m_socket as ZSteamSocket - which will cause a nullref when replaced
 				if (AccessTools.DeclaredMethod(typeof(ZNet), "GetPeer", new[] { typeof(ZRpc) }).Invoke(__instance, new object[] { rpc }) is ZNetPeer peer && ZNet.m_onlineBackend != OnlineBackendType.Steamworks)
 				{
-					AccessTools.DeclaredField(typeof(ZNetPeer), "m_socket").SetValue(peer, bufferingSocket);
+					FieldInfo field = AccessTools.DeclaredField(typeof(ZNetPeer), "m_socket");
+					if (field.GetValue(peer) is ZPlayFabSocket playFabSocket)
+					{
+						typeof(ZPlayFabSocket).GetField("m_remotePlayerId").SetValue(bufferingSocket, playFabSocket.m_remotePlayerId);
+					}
+					field.SetValue(peer, bufferingSocket);
 				}
 
 				__state ??= new Dictionary<Assembly, BufferingSocket>();
 				__state[Assembly.GetExecutingAssembly()] = bufferingSocket;
 			}
-		}
-		/*
-		235	0280	ldloc.1
-		236	0281	ldfld	class ISocket ZNetPeer::m_socket
-		237	0286	isinst	ZPlayFabSocket
-		238	028B	ldfld	string ZPlayFabSocket::m_remotePlayerId
-		 */
-		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-		{
-			CodeMatcher matcher = new(instructions);
-			var socketField = AccessTools.Field(typeof(ZNetPeer), "m_socket");
-			var remotePlayerIdField = AccessTools.Field(typeof(ZPlayFabSocket), "m_remotePlayerId");
-			matcher.MatchForward(false,
-					new CodeMatch(OpCodes.Ldloc_1), 
-					new CodeMatch(OpCodes.Ldfld, socketField),
-					new CodeMatch(OpCodes.Isinst),
-					new CodeMatch(OpCodes.Ldfld, remotePlayerIdField));
-			if (matcher.IsInvalid) return instructions;
-			matcher.SetAndAdvance(OpCodes.Ldstr, "none");
-			matcher.SetOpcodeAndAdvance(OpCodes.Nop);
-			matcher.SetOpcodeAndAdvance(OpCodes.Nop);
-			matcher.SetOpcodeAndAdvance(OpCodes.Nop);
-			return matcher.InstructionEnumeration();
 		}
 
 		[HarmonyPostfix]
@@ -1248,7 +1217,7 @@ public class VersionCheck
 		bool otherVersionOk = new System.Version(ReceivedCurrentVersion) >= new System.Version(MinimumRequiredVersion);
 		return myVersionOk && otherVersionOk;
 	}
-	
+
 	[SuppressMessage("ReSharper", "RedundantNameQualifier")]
 	private string ErrorClient()
 	{

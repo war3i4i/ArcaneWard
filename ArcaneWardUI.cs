@@ -41,9 +41,9 @@ public static class ArcaneWardUI
     private static Dictionary<Protection, Sprite> ProtectionIcons;
 
     public static AssetBundle Asset;
-    public static IEnumerator Init()
+    public static void Init()
     { 
-        yield return ArcaneWard.GetAssetBundle("kg_arcanewardui", bundle => Asset = bundle);
+        Asset = ArcaneWard.GetAssetBundle("kg_arcanewardui");
         ArcaneWard.ArcaneWard_TeleportIcon = Asset.LoadAsset<Sprite>("arcaneward_teleportmapicon");
         ArcaneWard.ArcaneWard_Radius_Icon = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img");
         ArcaneWard.ArcaneWard_Radius_Icon_Disabled = Asset.LoadAsset<Sprite>("ArcaneWardCircle_Img_Disabled");
