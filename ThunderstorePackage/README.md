@@ -40,6 +40,7 @@ Like my mods? Support me: `war3spells@gmail.com` (Paypal)
 
 | Version     | Changes                                                                                                                                                                             |
 |-------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0.7.0       | Added new no structures support tag. Remove useless dependency                                                                                                                      |
 | 0.6.9       | Added tameable protection flag, fixed crafting stations protection flag not working                                                                                                 |
 | 0.6.8       | Added new config option to prevent players from teleporting with non-teleportable items</br>Resduced visual size of portal on top of a ward                                         |
 | 0.6.7       | Fixed red error happening on hovering ward in Hammer                                                                                                                                |

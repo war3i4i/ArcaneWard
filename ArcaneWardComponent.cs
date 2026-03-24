@@ -579,34 +579,33 @@ public static class WardProtectionPatches
     }
     
 
-    private static class WNTSupportCacheRetrival
+    private static class WNTSupportCacheRetrival 
     {
-        private static readonly Dictionary<Piece, (float time, bool hasSupport)> _cache = [];
-        [HarmonyPatch(typeof(Piece),nameof(Piece.OnDestroy))]
-        private static class Piece_OnDestroy_Patch
+        private static readonly Dictionary<WearNTear, (float time, bool hasSupport)> _cache = [];
+        [HarmonyPatch(typeof(WearNTear),nameof(WearNTear.OnDestroy))]
+        private static class WearNTear_OnDestroy_Patch
         {
-            private static void Postfix(Piece __instance) => _cache.Remove(__instance);
-        }
-        public static bool SupportBlock(Piece p)
+            private static void Postfix(WearNTear __instance) => _cache.Remove(__instance);
+        } 
+        public static bool SupportBlock(WearNTear p)
         {
-            if (!p || !p.m_nview.IsValid()) return false;
+            if (!p.m_nview.IsValid()) return false;
             if (_cache.TryGetValue(p, out var value))
             {
-                if (value.time + 10f >= Time.time) return value.hasSupport;
+                if (value.time + 3f >= Time.time) return value.hasSupport;
                 _cache.Remove(p);
             }
             bool hasFlag = ArcaneWardComponent.CheckFlag(p.transform.position, false, Protection.Pieces_Nosupport, false);
             _cache[p] = (Time.time, hasFlag);
             return hasFlag;
         }
-    }
+    } 
     [HarmonyPatch(typeof(WearNTear),nameof(WearNTear.UpdateSupport))]
     private static class WearNTear_UpdateSupport_Patch
     {
         private static bool Prefix(WearNTear __instance)
         {
-            var piece = __instance.m_piece;
-            if (!WNTSupportCacheRetrival.SupportBlock(piece)) return true;
+            if (!WNTSupportCacheRetrival.SupportBlock(__instance)) return true;
             __instance.m_support = 100f;
             return false;
         }
