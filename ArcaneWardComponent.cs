@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -40,6 +41,7 @@ public enum Protection : long
     [Extensions.ProtectionIcon("PickaxeIron")] Terrain_Modification = 1 << 21,
     [Extensions.ProtectionIcon("Coins")] Item_Pickup = 1 << 22,
     [Extensions.ProtectionIcon("VoltureEgg")] Tameable_Damage = 1 << 23,
+    [Extensions.ProtectionIcon("Hammer")] Pieces_Nosupport = 1 << 24,
 }
 public class ArcaneWardComponent : MonoBehaviour, Interactable, Hoverable
 {
@@ -483,7 +485,6 @@ public static class WardProtectionPatches
             }
         }
     }
-  
     [HarmonyPatch(typeof(Trap),nameof(Trap.Interact))]
     private static class Trap_Interact_Patch
     {
@@ -539,7 +540,7 @@ public static class WardProtectionPatches
                 __result = false;
             }
         }
-    } 
+    }
     [HarmonyPatch(typeof(CraftingStation),nameof(CraftingStation.Interact))]
     private static class CraftingStation_Interact_Patch
     {
@@ -576,4 +577,39 @@ public static class WardProtectionPatches
             }
         }
     }
+    
+
+    private static class WNTSupportCacheRetrival
+    {
+        private static readonly Dictionary<Piece, (float time, bool hasSupport)> _cache = [];
+        [HarmonyPatch(typeof(Piece),nameof(Piece.OnDestroy))]
+        private static class Piece_OnDestroy_Patch
+        {
+            private static void Postfix(Piece __instance) => _cache.Remove(__instance);
+        }
+        public static bool SupportBlock(Piece p)
+        {
+            if (!p || !p.m_nview.IsValid()) return false;
+            if (_cache.TryGetValue(p, out var value))
+            {
+                if (value.time + 10f >= Time.time) return value.hasSupport;
+                _cache.Remove(p);
+            }
+            bool hasFlag = ArcaneWardComponent.CheckFlag(p.transform.position, false, Protection.Pieces_Nosupport, false);
+            _cache[p] = (Time.time, hasFlag);
+            return hasFlag;
+        }
+    }
+    [HarmonyPatch(typeof(WearNTear),nameof(WearNTear.UpdateSupport))]
+    private static class WearNTear_UpdateSupport_Patch
+    {
+        private static bool Prefix(WearNTear __instance)
+        {
+            var piece = __instance.m_piece;
+            if (!WNTSupportCacheRetrival.SupportBlock(piece)) return true;
+            __instance.m_support = 100f;
+            return false;
+        }
+    }
+    
 }

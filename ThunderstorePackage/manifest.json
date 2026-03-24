@@ -5,6 +5,5 @@
   "description": "Ward with configurable UI protection features and distanced view / control by map click",
   "dependencies": [
       "denikson-BepInExPack_Valheim-5.4.2202",
-      "KGvalheim-Async_Mod_Loader-1.0.0"
   ]
 }
